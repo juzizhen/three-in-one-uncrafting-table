@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "uncrafting-recipe-table:block/uncrafting_table" }
+    }
+}

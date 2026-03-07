@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "uncrafting-recipe-table",
+	"version": "${version}",
+	"name": "Uncrafting Recipe Table",
+	"description": "Added Uncrafting Recipe Table to the game.",
+	"authors": [
+		"juzizhen"
+	],
+	"contact": {
+		"homepage": "",
+		"sources": ""
+	},
+	"license": "GPL-3.0",
+	"icon": "assets/uncrafting-recipe-table/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable"
+		],
+		"client": [
+			"com.juzizhen.uncraftingrecipetable.UncraftingRecipeTableClient"
+		]
+	},
+	"mixins": [
+		"uncrafting-recipe-table.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
