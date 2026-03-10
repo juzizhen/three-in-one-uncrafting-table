@@ -352,12 +352,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
     }
 
-    private static class DummyContainer extends ScreenHandler {
-        public DummyContainer() { super(null, -1); }
-        @Override public ItemStack quickMove(PlayerEntity player, int index) { return ItemStack.EMPTY; }
-        @Override public boolean canUse(PlayerEntity player) { return true; }
-    }
-
     private int getRecipeOutputCount() {
         if (matchingRecipes.isEmpty()) return 1;
         Recipe<?> recipe = matchingRecipes.get(selectedRecipeIndex);

@@ -41,6 +41,10 @@ public class UncraftingScreenHandler extends ScreenHandler {
 
     @Override
     public ItemStack quickMove(PlayerEntity player, int index) {
+        if (player.getWorld().isClient()) {
+            return ItemStack.EMPTY;
+        }
+
         Slot slot = this.slots.get(index);
         if (!slot.hasStack()) {
             return ItemStack.EMPTY;
@@ -50,12 +54,16 @@ public class UncraftingScreenHandler extends ScreenHandler {
         ItemStack movedStack = originalStack.copy();
 
         if (index >= 0 && index <= 1) {
-            if (!this.insertItem(originalStack, 11, 47, true)) {
-                return ItemStack.EMPTY;
+            if (!this.insertItem(originalStack, 11, 38, false)) {
+                if (!this.insertItem(originalStack, 38, 47, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
         } else if (index >= 2 && index <= 10) {
-            if (!this.insertItem(originalStack, 11, 47, true)) {
-                return ItemStack.EMPTY;
+            if (!this.insertItem(originalStack, 11, 38, false)) {
+                if (!this.insertItem(originalStack, 38, 47, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
             if (originalStack.getCount() < movedStack.getCount()) {
                 int transferred = movedStack.getCount() - originalStack.getCount();
