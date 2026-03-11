@@ -53,7 +53,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
         context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight);
 
-        if (!this.handler.hasRecipes()) {
+        if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) == ItemStack.EMPTY) {
             context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21);
         }
 
@@ -77,6 +77,22 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         context.drawText(this.textRenderer, this.title, 8, 6, 4210752, false);
+
+        if (handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) != ItemStack.EMPTY) {
+            int xpCost = this.handler.blockEntity.experienceCost;
+            if (xpCost > 0) {
+                boolean hasEnoughXp = false;
+                if (this.client != null && this.client.player != null) {
+                    hasEnoughXp = this.client.player.isCreative() || this.client.player.experienceLevel >= xpCost;
+                }
+                int color = hasEnoughXp ? 8453920 : 16736352;
+
+                Text xpText = Text.translatable("tooltip.uncrafting-recipe-table.need_xp", xpCost);
+                int textWidth = this.textRenderer.getWidth(xpText);
+
+                context.drawText(this.textRenderer, xpText, this.backgroundWidth - textWidth - 80, 64, color, false);
+            }
+        }
     }
 
     @Override
@@ -84,7 +100,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         if (mouseX >= this.x + 121 && mouseX < this.x + 128 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             if (this.client != null && this.client.interactionManager != null) {
-                    this.client.interactionManager.clickButton(this.handler.syncId, 0);
+                this.client.interactionManager.clickButton(this.handler.syncId, 0);
             }
             MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;

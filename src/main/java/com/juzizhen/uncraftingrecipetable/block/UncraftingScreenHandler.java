@@ -6,15 +6,14 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.Property;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 
 public class UncraftingScreenHandler extends ScreenHandler {
-    private final UncraftingTableBlockEntity blockEntity;
+    final UncraftingTableBlockEntity blockEntity;
     private final Inventory inventory;
-    public boolean leftButtonActive = false;
-    public boolean rightButtonActive = false;
 
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(UncraftingRecipeTable.UNCRAFTING_SCREEN_HANDLER, syncId);
@@ -39,6 +38,17 @@ public class UncraftingScreenHandler extends ScreenHandler {
         for (int x = 0; x < 9; x++) {
             this.addSlot(new Slot(playerInventory, x, 8 + x * 18, 142));
         }
+
+        this.addProperty(new Property() {
+            @Override
+            public int get() {
+                return blockEntity.experienceCost;
+            }
+            @Override
+            public void set(int value) {
+                blockEntity.experienceCost = value;
+            }
+        });
     }
 
     @Override
@@ -64,6 +74,9 @@ public class UncraftingScreenHandler extends ScreenHandler {
                 }
             }
         } else if (index >= 2 && index <= 10) {
+            if (blockEntity.experienceCost > 0 && !player.isCreative() && player.experienceLevel < blockEntity.experienceCost) {
+                return ItemStack.EMPTY;
+            }
             if (!this.insertItem(originalStack, 11, 38, false)) {
                 if (!this.insertItem(originalStack, 38, 47, false)) {
                     return ItemStack.EMPTY;
@@ -95,7 +108,7 @@ public class UncraftingScreenHandler extends ScreenHandler {
         slot.onQuickTransfer(originalStack, movedStack);
 
         if (triggerOutputChange) {
-            blockEntity.onOutputChanged(movedStack);
+            blockEntity.onOutputChanged(movedStack, player);
             return ItemStack.EMPTY;
         }
 
@@ -103,7 +116,23 @@ public class UncraftingScreenHandler extends ScreenHandler {
     }
 
     public boolean hasRecipes() {
-        return !blockEntity.matchingRecipes.isEmpty();
+        Slot inputSlot = this.slots.get(1);
+
+        if (!blockEntity.hasOutputItems() && !inputSlot.hasStack()) {
+            return false;
+        }
+
+        if (!inputSlot.hasStack()) {
+            return true;
+        }
+
+        for (int i = 2; i <= 10; i++) {
+            if (!this.slots.get(i).getStack().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -161,7 +190,16 @@ public class UncraftingScreenHandler extends ScreenHandler {
         @Override
         public void onTakeItem(PlayerEntity player, ItemStack stack) {
             super.onTakeItem(player, stack);
-            blockEntity.onOutputChanged(stack);
+            blockEntity.onOutputChanged(stack, player);
+        }
+
+        @Override
+        public boolean canTakeItems(PlayerEntity player) {
+            if (blockEntity.experienceCost > 0 && !player.isCreative() && player.experienceLevel < blockEntity.experienceCost) {
+                return false;
+            }
+
+            return player.currentScreenHandler.getCursorStack().isEmpty();
         }
     }
 

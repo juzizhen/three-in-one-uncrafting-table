@@ -3,6 +3,7 @@ package com.juzizhen.uncraftingrecipetable;
 import com.juzizhen.uncraftingrecipetable.block.UncraftingScreenHandler;
 import com.juzizhen.uncraftingrecipetable.block.UncraftingTableBlock;
 import com.juzizhen.uncraftingrecipetable.block.UncraftingTableBlockEntity;
+import com.juzizhen.uncraftingrecipetable.config.ModConfig;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
@@ -27,9 +28,12 @@ import org.slf4j.LoggerFactory;
 public class UncraftingRecipeTable implements ModInitializer {
 	public static final String MOD_ID = "uncrafting-recipe-table";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static ModConfig CONFIG;
 
 	@Override
 	public void onInitialize() {
+		CONFIG = ModConfig.load();
+
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
 
 		LOGGER.info("Uncrafting Recipe Table Initialized!");
