@@ -1,6 +1,8 @@
 package com.juzizhen.uncraftingrecipetable.block;
 
 import com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable;
+import com.juzizhen.uncraftingrecipetable.mixin.SmithingTransformRecipeAccessor;
+import com.juzizhen.uncraftingrecipetable.mixin.SmithingTrimRecipeAccessor;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -29,7 +31,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     public static final int SLOT_OUTPUT_END = 10;
 
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(11, ItemStack.EMPTY);
-    private final List<Recipe<?>> matchingRecipes = new ArrayList<>();
+    final List<Recipe<?>> matchingRecipes = new ArrayList<>();
     private int selectedRecipeIndex = 0;
     private int experienceCost = 0;
 
@@ -224,27 +226,54 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         if (multiplier <= 0) return;
 
         experienceCost = XP_PER_RECIPE * multiplier;
-
         int totalOutputItems = 0;
 
-        for (int i = 0; i < ingredients.size() && i < 9; i++) {
-            Ingredient ing = ingredients.get(i);
-            ItemStack[] matching = ing.getMatchingStacks();
-            if (matching.length > 0) {
-                ItemStack stack = matching[0].copy();
-                stack.setCount(multiplier);
-                int slotIndex = SLOT_OUTPUT_START + (i / 3) * 3 + (i % 3);
-                setStack(slotIndex, stack);
-                totalOutputItems += stack.getCount();
+        if (recipe instanceof ShapedRecipe shaped) {
+            int width = shaped.getWidth();
+            int height = shaped.getHeight();
+
+            for (int row = 0; row < height; row++) {
+                for (int col = 0; col < width; col++) {
+                    int ingredientIndex = row * width + col;
+                    if (ingredientIndex >= ingredients.size()) continue;
+
+                    Ingredient ing = ingredients.get(ingredientIndex);
+                    ItemStack[] matching = ing.getMatchingStacks();
+
+                    int slotIndex = SLOT_OUTPUT_START + row * 3 + col;
+
+                    if (matching.length > 0) {
+                        ItemStack stack = matching[0].copy();
+                        stack.setCount(multiplier);
+                        setStack(slotIndex, stack);
+                        totalOutputItems += stack.getCount();
+                    } else {
+                        setStack(slotIndex, ItemStack.EMPTY);
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < ingredients.size() && i < 9; i++) {
+                Ingredient ing = ingredients.get(i);
+                ItemStack[] matching = ing.getMatchingStacks();
+                int slotIndex = SLOT_OUTPUT_START + i;
+
+                if (matching.length > 0) {
+                    ItemStack stack = matching[0].copy();
+                    stack.setCount(multiplier);
+                    setStack(slotIndex, stack);
+                    totalOutputItems += stack.getCount();
+                } else {
+                    setStack(slotIndex, ItemStack.EMPTY);
+                }
             }
         }
 
         outputCounter = totalOutputItems;
     }
 
-    private void fillSmithingOutput(SmithingRecipe recipe, int inputCount) {
+    private void fillSmithingOutput(Recipe<?> recipe, int inputCount) {
         if (world == null) return;
-        List<Ingredient> ingredients = recipe.getIngredients();
         ItemStack recipeOutput = recipe.getOutput(world.getRegistryManager());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
@@ -252,23 +281,38 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         if (multiplier <= 0) return;
 
         experienceCost = XP_PER_RECIPE * multiplier;
-
         int totalOutputItems = 0;
 
-        for (int i = 0; i < 3 && i < ingredients.size(); i++) {
-            Ingredient ing = ingredients.get(i);
-            ItemStack[] matching = ing.getMatchingStacks();
-            if (matching.length > 0) {
-                ItemStack stack = matching[0].copy();
+        Ingredient[] parts = new Ingredient[3];
+
+        if (recipe instanceof SmithingTransformRecipe transform) {
+            SmithingTransformRecipeAccessor accessor = (SmithingTransformRecipeAccessor) transform;
+            parts[0] = accessor.getTemplate();
+            parts[1] = accessor.getBase();
+            parts[2] = accessor.getAddition();
+        } else if (recipe instanceof SmithingTrimRecipe trim) {
+            SmithingTrimRecipeAccessor accessor = (SmithingTrimRecipeAccessor) trim;
+            parts[0] = accessor.getTemplate();
+            parts[1] = accessor.getBase();
+            parts[2] = accessor.getAddition();
+        } else {
+            return;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            Ingredient ing = parts[i];
+            if (ing != null && ing.getMatchingStacks().length > 0) {
+                ItemStack stack = ing.getMatchingStacks()[0].copy();
                 stack.setCount(multiplier);
                 setStack(SLOT_OUTPUT_START + i, stack);
                 totalOutputItems += stack.getCount();
+            } else {
+                setStack(SLOT_OUTPUT_START + i, ItemStack.EMPTY);
             }
         }
 
         outputCounter = totalOutputItems;
     }
-
     void clearOutputSlots() {
         for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
             setStack(i, ItemStack.EMPTY);
@@ -308,21 +352,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         super.markDirty();
         if (world != null) world.updateListeners(pos, getCachedState(), getCachedState(), 3);
     }
-//    @Override protected void writeNbt(NbtCompound nbt) {
-//        super.writeNbt(nbt);
-//        Inventories.writeNbt(nbt, items);
-//        nbt.putInt("SelectedRecipe", selectedRecipeIndex);
-//    }
-//    @Override public void readNbt(NbtCompound nbt) {
-//        super.readNbt(nbt);
-//        Inventories.readNbt(nbt, items);
-//        selectedRecipeIndex = nbt.getInt("SelectedRecipe");
-//    }
     @Override public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
         return new UncraftingScreenHandler(syncId, playerInventory, this);
     }
     @Override public Text getDisplayName() {
-        return Text.translatable("container.uncrafting_table");
+        return Text.translatable("container.uncrafting-recipe-table.uncrafting_table");
     }
     @Override public void writeScreenOpeningData(ServerPlayerEntity serverPlayerEntity, PacketByteBuf packetByteBuf) {
         packetByteBuf.writeBlockPos(this.pos);

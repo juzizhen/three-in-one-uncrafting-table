@@ -13,6 +13,8 @@ import net.minecraft.screen.slot.SlotActionType;
 public class UncraftingScreenHandler extends ScreenHandler {
     private final UncraftingTableBlockEntity blockEntity;
     private final Inventory inventory;
+    public boolean leftButtonActive = false;
+    public boolean rightButtonActive = false;
 
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(UncraftingRecipeTable.UNCRAFTING_SCREEN_HANDLER, syncId);
@@ -100,6 +102,10 @@ public class UncraftingScreenHandler extends ScreenHandler {
         return movedStack;
     }
 
+    public boolean hasRecipes() {
+        return !blockEntity.matchingRecipes.isEmpty();
+    }
+
     @Override
     public void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player) {
         if (slotIndex >= 0 && slotIndex < this.slots.size()) {
@@ -123,12 +129,18 @@ public class UncraftingScreenHandler extends ScreenHandler {
 
     @Override
     public boolean onButtonClick(PlayerEntity player, int id) {
-        if (id == 0) {
-            blockEntity.cycleRecipe(-1);
-            return true;
-        } else if (id == 1) {
-            blockEntity.cycleRecipe(1);
-            return true;
+        if (blockEntity.outputGetCount == 0) {
+            if (id == 0) {
+                if (blockEntity.matchingRecipes.size() > 1) {
+                    blockEntity.cycleRecipe(-1);
+                }
+                return true;
+            } else if (id == 1) {
+                if (blockEntity.matchingRecipes.size() > 1) {
+                    blockEntity.cycleRecipe(1);
+                }
+                return true;
+            }
         }
         return super.onButtonClick(player, id);
     }

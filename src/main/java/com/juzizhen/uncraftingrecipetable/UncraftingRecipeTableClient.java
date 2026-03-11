@@ -1,5 +1,6 @@
 package com.juzizhen.uncraftingrecipetable;
 
+import com.juzizhen.uncraftingrecipetable.block.UncraftingScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 

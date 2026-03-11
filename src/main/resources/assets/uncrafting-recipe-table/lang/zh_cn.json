@@ -1,4 +1,7 @@
 {
   "block.uncrafting-recipe-table.uncrafting_table": "拆解台",
-  "container.uncrafting_table": "拆解台"
+  "container.uncrafting-recipe-table.uncrafting_table": "拆解台",
+
+  "tooltip.uncrafting-recipe-table.prev_recipe": "上一配方",
+  "tooltip.uncrafting-recipe-table.next_recipe": "下一配方"
 }

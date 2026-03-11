@@ -1,4 +1,7 @@
 {
   "block.uncrafting-recipe-table.uncrafting_table": "Uncrafting Table",
-  "container.uncrafting_table": "Uncrafting Table"
+  "container.uncrafting-recipe-table.uncrafting_table": "Uncrafting Table",
+
+  "tooltip.uncrafting-recipe-table.prev_recipe": "Previous Recipe",
+  "tooltip.uncrafting-recipe-table.next_recipe": "Next Recipe"
 }
