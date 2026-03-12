@@ -1,4 +1,4 @@
-package com.juzizhen.uncraftingrecipetable.mixin;
+package com.juzizhen.threeinoneuncraftingtable.mixin;
 
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.SmithingTransformRecipe;

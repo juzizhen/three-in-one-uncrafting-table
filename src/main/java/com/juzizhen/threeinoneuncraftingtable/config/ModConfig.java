@@ -1,13 +1,13 @@
-package com.juzizhen.uncraftingrecipetable.config;
+package com.juzizhen.threeinoneuncraftingtable.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable;
+import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
 
 import java.io.*;
 
 public class ModConfig {
-    private static final File CONFIG_FILE = new File("config/uncrafting-recipe-table.json");
+    private static final File CONFIG_FILE = new File("config/three-in-one-uncrafting-table.json");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @SuppressWarnings("unused")
@@ -26,7 +26,7 @@ public class ModConfig {
             try (Reader reader = new FileReader(CONFIG_FILE)) {
                 return gson.fromJson(reader, ModConfig.class);
             } catch (IOException e) {
-                UncraftingRecipeTable.LOGGER.warn(e.getMessage());
+                ThreeInOneUncraftingTable.LOGGER.warn(e.getMessage());
             }
         }
         ModConfig config = new ModConfig();
@@ -38,7 +38,7 @@ public class ModConfig {
         try (Writer writer = new FileWriter(CONFIG_FILE)) {
             gson.toJson(this, writer);
         } catch (IOException e) {
-            UncraftingRecipeTable.LOGGER.warn(e.getMessage());
+            ThreeInOneUncraftingTable.LOGGER.warn(e.getMessage());
         }
     }
 }

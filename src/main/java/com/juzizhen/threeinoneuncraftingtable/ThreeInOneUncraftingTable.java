@@ -1,9 +1,9 @@
-package com.juzizhen.uncraftingrecipetable;
+package com.juzizhen.threeinoneuncraftingtable;
 
-import com.juzizhen.uncraftingrecipetable.block.UncraftingScreenHandler;
-import com.juzizhen.uncraftingrecipetable.block.UncraftingTableBlock;
-import com.juzizhen.uncraftingrecipetable.block.UncraftingTableBlockEntity;
-import com.juzizhen.uncraftingrecipetable.config.ModConfig;
+import com.juzizhen.threeinoneuncraftingtable.block.UncraftingScreenHandler;
+import com.juzizhen.threeinoneuncraftingtable.block.UncraftingTableBlock;
+import com.juzizhen.threeinoneuncraftingtable.block.UncraftingTableBlockEntity;
+import com.juzizhen.threeinoneuncraftingtable.config.ModConfig;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
@@ -25,8 +25,8 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UncraftingRecipeTable implements ModInitializer {
-	public static final String MOD_ID = "uncrafting-recipe-table";
+public class ThreeInOneUncraftingTable implements ModInitializer {
+	public static final String MOD_ID = "three-in-one-uncrafting-table";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static ModConfig CONFIG;
 
@@ -36,7 +36,7 @@ public class UncraftingRecipeTable implements ModInitializer {
 
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
 
-		LOGGER.info("Uncrafting Recipe Table Initialized!");
+		LOGGER.info("Three In One Uncrafting Table Initialized!");
 	}
 
 	public static final Block UNCRAFTING_TABLE = Registry.register(

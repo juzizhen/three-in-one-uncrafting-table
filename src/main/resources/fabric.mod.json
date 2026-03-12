@@ -1,29 +1,29 @@
 {
 	"schemaVersion": 1,
-	"id": "uncrafting-recipe-table",
+	"id": "three-in-one-uncrafting-table",
 	"version": "${version}",
-	"name": "Uncrafting Recipe Table",
-	"description": "Added Uncrafting Recipe Table to the game.",
+	"name": "Three In One Uncrafting Table",
+	"description": "This is a three-in-one uncrafting table.",
 	"authors": [
 		"juzizhen"
 	],
 	"contact": {
-		"homepage": "",
-		"sources": ""
+		"homepage": "https://github.com/juzizhen/three-in-one-uncrafting-table",
+		"sources": "https://github.com/juzizhen/three-in-one-uncrafting-table"
 	},
 	"license": "GPL-3.0",
-	"icon": "assets/uncrafting-recipe-table/icon.png",
+	"icon": "assets/three-in-one-uncrafting-table/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable"
+			"com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable"
 		],
 		"client": [
-			"com.juzizhen.uncraftingrecipetable.UncraftingRecipeTableClient"
+			"com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTableClient"
 		]
 	},
 	"mixins": [
-		"uncrafting-recipe-table.mixins.json"
+		"threeinoneuncraftingtable.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.18.4",

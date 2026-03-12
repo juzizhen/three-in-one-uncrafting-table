@@ -1,4 +1,4 @@
-package com.juzizhen.uncraftingrecipetable.block;
+package com.juzizhen.threeinoneuncraftingtable.block;
 
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;

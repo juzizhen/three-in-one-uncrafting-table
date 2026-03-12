@@ -1,0 +1,8 @@
+{
+  "block.three-in-one-uncrafting-table.uncrafting_table": "Uncrafting Table",
+  "container.three-in-one-uncrafting-table.uncrafting_table": "Uncrafting Table",
+
+  "tooltip.three-in-one-uncrafting-table.prev_recipe": "Previous Recipe",
+  "tooltip.three-in-one-uncrafting-table.next_recipe": "Next Recipe",
+  "tooltip.three-in-one-uncrafting-table.need_xp": "Requires %s experience"
+}

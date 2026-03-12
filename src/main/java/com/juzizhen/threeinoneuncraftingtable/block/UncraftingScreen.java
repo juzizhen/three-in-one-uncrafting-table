@@ -1,6 +1,6 @@
-package com.juzizhen.uncraftingrecipetable.block;
+package com.juzizhen.threeinoneuncraftingtable.block;
 
-import com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable;
+import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -14,7 +14,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
-    private static final Identifier TEXTURE = new Identifier(UncraftingRecipeTable.MOD_ID, "textures/gui/uncrafting_table.png");
+    private static final Identifier TEXTURE = new Identifier(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
 
     public UncraftingScreen(UncraftingScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -37,14 +37,14 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         if (mouseX >= this.x + 121 && mouseX < this.x + 128 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             context.drawTooltip(this.textRenderer,
-                    Text.translatable("tooltip.uncrafting-recipe-table.prev_recipe"),
+                    Text.translatable("tooltip.three-in-one-uncrafting-table.prev_recipe"),
                     mouseX, mouseY);
         }
 
         if (mouseX >= this.x + 137 && mouseX < this.x + 144 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             context.drawTooltip(this.textRenderer,
-                    Text.translatable("tooltip.uncrafting-recipe-table.next_recipe"),
+                    Text.translatable("tooltip.three-in-one-uncrafting-table.next_recipe"),
                     mouseX, mouseY);
         }
     }
@@ -87,7 +87,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
                 }
                 int color = hasEnoughXp ? 8453920 : 16736352;
 
-                Text xpText = Text.translatable("tooltip.uncrafting-recipe-table.need_xp", xpCost);
+                Text xpText = Text.translatable("tooltip.three-in-one-uncrafting-table.need_xp", xpCost);
                 int textWidth = this.textRenderer.getWidth(xpText);
 
                 context.drawText(this.textRenderer, xpText, this.backgroundWidth - textWidth - 80, 64, color, false);

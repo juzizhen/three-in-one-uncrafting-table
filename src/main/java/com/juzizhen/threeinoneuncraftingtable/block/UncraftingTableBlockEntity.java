@@ -1,7 +1,7 @@
-package com.juzizhen.uncraftingrecipetable.block;
+package com.juzizhen.threeinoneuncraftingtable.block;
 
-import com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable;
-import com.juzizhen.uncraftingrecipetable.mixin.SmithingTransformRecipeAccessor;
+import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
+import com.juzizhen.threeinoneuncraftingtable.mixin.SmithingTransformRecipeAccessor;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -52,8 +52,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     private int selectedRecipeIndex = 0;
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
-        super(UncraftingRecipeTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
-        configXpCost = UncraftingRecipeTable.CONFIG.xpCost;
+        super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
+        configXpCost = ThreeInOneUncraftingTable.CONFIG.xpCost;
     }
 
     public boolean hasOutputItems() {
@@ -75,11 +75,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             Recipe<?> recipe = matchingRecipes.get(selectedRecipeIndex);
             int inputCount = currentInput.getCount();
 
-            if (recipe instanceof CraftingRecipe craftingRecipe && UncraftingRecipeTable.CONFIG.enableCrafting) {
+            if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
                 fillCraftingOutput(craftingRecipe, inputCount);
-            } else if (recipe instanceof SmithingRecipe smithingRecipe && UncraftingRecipeTable.CONFIG.enableSmithing) {
+            } else if (recipe instanceof SmithingRecipe smithingRecipe && ThreeInOneUncraftingTable.CONFIG.enableSmithing) {
                 fillSmithingOutput(smithingRecipe, inputCount);
-            } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && UncraftingRecipeTable.CONFIG.enableStonecutting) {
+            } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && ThreeInOneUncraftingTable.CONFIG.enableStonecutting) {
                 fillStonecuttingOutput(stonecuttingRecipe, inputCount);
             }
         }
@@ -550,7 +550,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     @Override
     public Text getDisplayName() {
-        return Text.translatable("container.uncrafting-recipe-table.uncrafting_table");
+        return Text.translatable("container.three-in-one-uncrafting-table.uncrafting_table");
     }
 
     @Override

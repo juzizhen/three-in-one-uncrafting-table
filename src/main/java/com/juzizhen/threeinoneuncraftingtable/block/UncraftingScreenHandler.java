@@ -1,6 +1,6 @@
-package com.juzizhen.uncraftingrecipetable.block;
+package com.juzizhen.threeinoneuncraftingtable.block;
 
-import com.juzizhen.uncraftingrecipetable.UncraftingRecipeTable;
+import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -16,7 +16,7 @@ public class UncraftingScreenHandler extends ScreenHandler {
     private final Inventory inventory;
 
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
-        super(UncraftingRecipeTable.UNCRAFTING_SCREEN_HANDLER, syncId);
+        super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER, syncId);
         this.inventory = inventory;
         this.blockEntity = (UncraftingTableBlockEntity) inventory;
 
