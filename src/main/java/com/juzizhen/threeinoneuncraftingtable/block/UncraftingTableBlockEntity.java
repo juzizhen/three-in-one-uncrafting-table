@@ -44,6 +44,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     public int onSlotClickIndex = 0;
     public int experienceCost = 0;
     private int selectedRecipeIndex = 0;
+    private int inputConsumed = 0;
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
@@ -147,7 +148,17 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                         setStack(SLOT_BOOK, enchantedBook);
                     }
                 }
-                setStack(SLOT_INPUT, ItemStack.EMPTY);
+                // Only consume the exact amount of input used for this uncrafting
+                int consumed = inputConsumed > 0 ? inputConsumed : currentInput.getCount();
+                if (currentInput.getCount() > consumed) {
+                    currentInput.setCount(currentInput.getCount() - consumed);
+                    // Re-search recipes for the remaining input items
+                    matchingRecipes.clear();
+                    selectedRecipeIndex = 0;
+                    searchRecipeToOutput(getStack(SLOT_INPUT));
+                } else {
+                    setStack(SLOT_INPUT, ItemStack.EMPTY);
+                }
             } else if (outputGetCount < 0) {
                 outputGetCount = 0;
             } else {
@@ -198,6 +209,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         noOutputs = true;
         outputGetCount = 0;
         experienceCost = 0;
+        inputConsumed = 0;
         markDirty();
     }
 
@@ -306,6 +318,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         experienceCost = cost;
         if (experienceCost < 1) experienceCost = 1;
+        inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
 
@@ -365,6 +378,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         if (trim != null) {
             if (inputCount <= 0) return;
             experienceCost = configXpCost * inputCount;
+            inputConsumed = inputCount;
 
             // 槽位 0: 纹饰模板
             Item templateItem = trim.getPattern().value().templateItem().value();
@@ -406,6 +420,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         experienceCost = cost;
         if (experienceCost < 1) experienceCost = 1;
+        inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
         Ingredient[] parts = new Ingredient[3];
@@ -454,6 +469,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         experienceCost = cost;
         if (experienceCost < 1) experienceCost = 1;
+        inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
 
