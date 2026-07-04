@@ -10,11 +10,19 @@ import net.minecraft.screen.Property;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.math.BlockPos;
 
 public class UncraftingScreenHandler extends ScreenHandler {
     final UncraftingTableBlockEntity blockEntity;
     private final Inventory inventory;
 
+    // Client-side constructor: receives BlockPos from ExtendedScreenHandlerType
+    public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, BlockPos pos) {
+        this(syncId, playerInventory,
+                (Inventory) playerInventory.player.getWorld().getBlockEntity(pos));
+    }
+
+    // Server-side constructor
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER, syncId);
         this.inventory = inventory;
@@ -90,7 +98,7 @@ public class UncraftingScreenHandler extends ScreenHandler {
             boolean success = false;
 
             if (originalStack.isOf(Items.BOOK)) {
-                Slot bookSlot = this.slots.get(0);
+                Slot bookSlot = this.slots.getFirst();
                 if (!bookSlot.hasStack()) {
                     bookSlot.setStack(originalStack.split(1));
                     bookSlot.markDirty();

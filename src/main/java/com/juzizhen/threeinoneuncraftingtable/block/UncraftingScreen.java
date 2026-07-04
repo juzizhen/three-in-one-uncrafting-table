@@ -14,7 +14,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
-    private static final Identifier TEXTURE = new Identifier(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
+    private static final Identifier TEXTURE = Identifier.of(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
 
     public UncraftingScreen(UncraftingScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -24,11 +24,11 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        this.renderBackground(context);
+        this.renderBackground(context, mouseX, mouseY, delta);
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
 
-        Slot bookSlot = this.handler.slots.get(0);
+        Slot bookSlot = this.handler.slots.getFirst();
         if (!bookSlot.hasStack()) {
             ItemStack ghostBook = new ItemStack(Items.BOOK);
             context.drawItemInSlot(this.textRenderer, ghostBook, bookSlot.x + this.x, bookSlot.y + this.y);
@@ -51,26 +51,26 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
 
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight);
+        context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight, 256, 256);
 
         if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) == ItemStack.EMPTY) {
-            context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21);
+            context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21, 256, 256);
         }
 
         boolean hoverLeft = mouseX >= this.x + 121 && mouseX < this.x + 128 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82;
         if (hoverLeft) {
-            context.drawTexture(TEXTURE, this.x + 121, this.y + 71, 177, 35, 7, 11); // 激活
+            context.drawTexture(TEXTURE, this.x + 121, this.y + 71, 177, 35, 7, 11, 256, 256); // 激活
         } else {
-            context.drawTexture(TEXTURE, this.x + 121, this.y + 71, 177, 23, 7, 11); // 非激活
+            context.drawTexture(TEXTURE, this.x + 121, this.y + 71, 177, 23, 7, 11, 256, 256); // 非激活
         }
 
         boolean hoverRight = mouseX >= this.x + 137 && mouseX < this.x + 144 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82;
         if (hoverRight) {
-            context.drawTexture(TEXTURE, this.x + 137, this.y + 71, 185, 35, 7, 11); // 激活
+            context.drawTexture(TEXTURE, this.x + 137, this.y + 71, 185, 35, 7, 11, 256, 256); // 激活
         } else {
-            context.drawTexture(TEXTURE, this.x + 137, this.y + 71, 185, 23, 7, 11); // 非激活
+            context.drawTexture(TEXTURE, this.x + 137, this.y + 71, 185, 23, 7, 11, 256, 256); // 非激活
         }
     }
 
@@ -118,6 +118,3 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 }
-
-
-

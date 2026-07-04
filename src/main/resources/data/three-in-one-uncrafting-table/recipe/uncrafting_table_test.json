@@ -4,7 +4,7 @@
     { "item": "three-in-one-uncrafting-table:uncrafting_table" }
   ],
   "result": {
-    "item": "three-in-one-uncrafting-table:uncrafting_table",
+    "id": "three-in-one-uncrafting-table:uncrafting_table",
     "count": 1
   }
 }

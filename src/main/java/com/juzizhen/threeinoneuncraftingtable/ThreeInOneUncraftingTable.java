@@ -6,15 +6,12 @@ import com.juzizhen.threeinoneuncraftingtable.block.UncraftingTableBlockEntity;
 import com.juzizhen.threeinoneuncraftingtable.config.ModConfig;
 import net.fabricmc.api.ModInitializer;
 
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
-import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
@@ -22,6 +19,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,28 +40,26 @@ public class ThreeInOneUncraftingTable implements ModInitializer {
 	public static final Block UNCRAFTING_TABLE = Registry.register(
 			Registries.BLOCK,
 			Identifier.of(MOD_ID, "uncrafting_table"),
-			new UncraftingTableBlock(FabricBlockSettings.copyOf(Blocks.SMITHING_TABLE))
+			new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE))
 	);
 
 	public static final Item UNCRAFTING_TABLE_ITEM = Registry.register(
 			Registries.ITEM,
 			Identifier.of(MOD_ID, "uncrafting_table"),
-			new BlockItem(UNCRAFTING_TABLE, new FabricItemSettings())
+			new BlockItem(UNCRAFTING_TABLE, new Item.Settings())
 	);
 
 	public static final BlockEntityType<UncraftingTableBlockEntity> UNCRAFTING_TABLE_BLOCK_ENTITY =
 			Registry.register(
 					Registries.BLOCK_ENTITY_TYPE,
 					Identifier.of(MOD_ID, "uncrafting_table"),
-					FabricBlockEntityTypeBuilder.create(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE).build()
+					BlockEntityType.Builder.create(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE).build()
 			);
 
 	public static final ScreenHandlerType<UncraftingScreenHandler> UNCRAFTING_SCREEN_HANDLER =
 			Registry.register(
 					Registries.SCREEN_HANDLER,
 					Identifier.of(MOD_ID, "uncrafting_table"),
-					new ExtendedScreenHandlerType<>((syncId, inv, buf) ->
-							new UncraftingScreenHandler(syncId, inv,
-									(Inventory) inv.player.getWorld().getBlockEntity(buf.readBlockPos())))
+					new ExtendedScreenHandlerType<>(UncraftingScreenHandler::new, BlockPos.PACKET_CODEC)
 			);
 }

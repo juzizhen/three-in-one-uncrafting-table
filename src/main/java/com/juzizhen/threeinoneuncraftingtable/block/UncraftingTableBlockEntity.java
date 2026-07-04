@@ -5,44 +5,38 @@ import com.juzizhen.threeinoneuncraftingtable.mixin.SmithingTransformRecipeAcces
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentLevelEntry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.item.EnchantedBookItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.trim.ArmorTrim;
 import net.minecraft.item.trim.ArmorTrimMaterial;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.recipe.*;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, Inventory {
+public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos>, Inventory {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_BOOK = 1;
     public static final int SLOT_OUTPUT_START = 2;
     public static final int SLOT_OUTPUT_END = 10;
     private static int configXpCost = 0;
-    final List<Recipe<?>> matchingRecipes = new ArrayList<>();
+    final List<RecipeEntry<?>> matchingRecipes = new ArrayList<>();
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(11, ItemStack.EMPTY);
     public int outputCounter = 0;
     public int outputGetCount = 0;
@@ -72,7 +66,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         findMatchingRecipes(currentInput);
 
         if (!matchingRecipes.isEmpty()) {
-            Recipe<?> recipe = matchingRecipes.get(selectedRecipeIndex);
+            RecipeEntry<?> entry = matchingRecipes.get(selectedRecipeIndex);
+            Recipe<?> recipe = entry.value();
             int inputCount = currentInput.getCount();
 
             if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
@@ -142,18 +137,13 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                     if (book.getItem() == Items.BOOK) {
                         ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
 
-                        NbtList enchantments = currentInput.getEnchantments();
-                        for (int i = 0; i < enchantments.size(); i++) {
-                            NbtCompound enchantTag = enchantments.getCompound(i);
-                            String id = enchantTag.getString("id");
-                            int lvl = enchantTag.getInt("lvl");
-
-                            Enchantment enchantment = Registries.ENCHANTMENT.get(new Identifier(id));
-                            if (enchantment != null) {
-                                EnchantedBookItem.addEnchantment(enchantedBook,
-                                        new EnchantmentLevelEntry(enchantment, lvl));
-                            }
+                        ItemEnchantmentsComponent sourceEnchantments = currentInput.getEnchantments();
+                        ItemEnchantmentsComponent.Builder builder = new ItemEnchantmentsComponent.Builder(ItemEnchantmentsComponent.DEFAULT);
+                        for (RegistryEntry<Enchantment> enchantmentEntry : sourceEnchantments.getEnchantments()) {
+                            int lvl = sourceEnchantments.getLevel(enchantmentEntry);
+                            builder.add(enchantmentEntry, lvl);
                         }
+                        enchantedBook.set(DataComponentTypes.STORED_ENCHANTMENTS, builder.build());
                         setStack(SLOT_BOOK, enchantedBook);
                     }
                 }
@@ -245,7 +235,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         clearOutputSlots();
         if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
 
-        Recipe<?> recipe = matchingRecipes.get(selectedRecipeIndex);
+        RecipeEntry<?> entry = matchingRecipes.get(selectedRecipeIndex);
+        Recipe<?> recipe = entry.value();
         ItemStack input = getStack(SLOT_INPUT);
         int inputCount = input.getCount();
 
@@ -261,30 +252,34 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     private void findMatchingRecipes(ItemStack input) {
         if (!(world instanceof ServerWorld serverWorld)) return;
         matchingRecipes.clear();
-        DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
 
-        if (ArmorTrim.getTrim(registryManager, input).isPresent()) {
-            for (SmithingRecipe recipe : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
-                if (recipe instanceof SmithingTrimRecipe) {
-                    matchingRecipes.add(recipe);
+        // Check for armor trim via component API (replaces ArmorTrim.getTrim in 1.21.1)
+        ArmorTrim trim = input.get(DataComponentTypes.TRIM);
+        if (trim != null) {
+            for (RecipeEntry<SmithingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
+                if (recipeEntry.value() instanceof SmithingTrimRecipe) {
+                    matchingRecipes.add(recipeEntry);
                     return;
                 }
             }
         }
 
-        for (CraftingRecipe recipe : serverWorld.getRecipeManager().listAllOfType(RecipeType.CRAFTING)) {
-            if (ItemStack.areItemsEqual(input, recipe.getOutput(serverWorld.getRegistryManager()))) {
-                matchingRecipes.add(recipe);
+        for (RecipeEntry<CraftingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.CRAFTING)) {
+            CraftingRecipe recipe = recipeEntry.value();
+            if (ItemStack.areItemsEqual(input, recipe.getResult(serverWorld.getRegistryManager()))) {
+                matchingRecipes.add(recipeEntry);
             }
         }
-        for (SmithingRecipe recipe : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
-            if (ItemStack.areItemsEqual(input, recipe.getOutput(serverWorld.getRegistryManager()))) {
-                matchingRecipes.add(recipe);
+        for (RecipeEntry<SmithingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
+            SmithingRecipe recipe = recipeEntry.value();
+            if (ItemStack.areItemsEqual(input, recipe.getResult(serverWorld.getRegistryManager()))) {
+                matchingRecipes.add(recipeEntry);
             }
         }
-        for (StonecuttingRecipe recipe : serverWorld.getRecipeManager().listAllOfType(RecipeType.STONECUTTING)) {
-            if (ItemStack.areItemsEqual(input, recipe.getOutput(serverWorld.getRegistryManager()))) {
-                matchingRecipes.add(recipe);
+        for (RecipeEntry<StonecuttingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.STONECUTTING)) {
+            StonecuttingRecipe recipe = recipeEntry.value();
+            if (ItemStack.areItemsEqual(input, recipe.getResult(serverWorld.getRegistryManager()))) {
+                matchingRecipes.add(recipeEntry);
             }
         }
     }
@@ -292,7 +287,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     private void fillCraftingOutput(CraftingRecipe recipe, int inputCount) {
         if (world == null) return;
         List<Ingredient> ingredients = recipe.getIngredients();
-        ItemStack recipeOutput = recipe.getOutput(world.getRegistryManager());
+        ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -306,7 +301,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().size();
+            int enchantCount = input.getEnchantments().getSize();
             cost += enchantCount * 2;
         }
         experienceCost = cost;
@@ -364,11 +359,10 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         ItemStack inputStack = getStack(SLOT_INPUT);
         if (inputStack.isEmpty()) return;
 
-        Optional<ArmorTrim> optionalTrim = ArmorTrim.getTrim(world.getRegistryManager(), inputStack);
+        // Check for armor trim via component API (replaces ArmorTrim.getTrim in 1.21.1)
+        ArmorTrim trim = inputStack.get(DataComponentTypes.TRIM);
 
-        if (optionalTrim.isPresent()) {
-            ArmorTrim trim = optionalTrim.get();
-
+        if (trim != null) {
             if (inputCount <= 0) return;
             experienceCost = configXpCost * inputCount;
 
@@ -380,7 +374,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             // 槽位 1: 抹除纹饰的原装备
             ItemStack baseStack = inputStack.copy();
             baseStack.setCount(inputCount);
-            baseStack.removeSubNbt("Trim");
+            baseStack.remove(DataComponentTypes.TRIM);
             setStack(SLOT_OUTPUT_START + 1, baseStack);
 
             // 槽位 2: 纹饰矿物材料
@@ -393,7 +387,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             return;
         }
 
-        ItemStack recipeOutput = recipe.getOutput(world.getRegistryManager());
+        ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -407,7 +401,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().size();
+            int enchantCount = input.getEnchantments().getSize();
             cost += enchantCount * 2;
         }
         experienceCost = cost;
@@ -442,7 +436,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     private void fillStonecuttingOutput(StonecuttingRecipe recipe, int inputCount) {
         if (world == null) return;
-        ItemStack recipeOutput = recipe.getOutput(world.getRegistryManager());
+        ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -455,7 +449,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().size();
+            int enchantCount = input.getEnchantments().getSize();
             cost += enchantCount * 2;
         }
         experienceCost = cost;
@@ -464,7 +458,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         int totalOutputItems = 0;
 
         if (!recipe.getIngredients().isEmpty()) {
-            Ingredient ing = recipe.getIngredients().get(0);
+            Ingredient ing = recipe.getIngredients().getFirst();
             ItemStack[] matching = ing.getMatchingStacks();
             if (matching.length > 0) {
                 ItemStack stack = matching[0].copy();
@@ -554,7 +548,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     @Override
-    public void writeScreenOpeningData(ServerPlayerEntity serverPlayerEntity, PacketByteBuf packetByteBuf) {
-        packetByteBuf.writeBlockPos(this.pos);
+    public BlockPos getScreenOpeningData(ServerPlayerEntity serverPlayerEntity) {
+        return this.pos;
     }
 }

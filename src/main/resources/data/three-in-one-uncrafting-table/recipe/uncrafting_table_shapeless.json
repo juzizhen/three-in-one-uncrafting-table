@@ -6,7 +6,7 @@
     { "item": "minecraft:netherite_upgrade_smithing_template" }
   ],
   "result": {
-    "item": "three-in-one-uncrafting-table:uncrafting_table",
+    "id": "three-in-one-uncrafting-table:uncrafting_table",
     "count": 1
   }
 }
