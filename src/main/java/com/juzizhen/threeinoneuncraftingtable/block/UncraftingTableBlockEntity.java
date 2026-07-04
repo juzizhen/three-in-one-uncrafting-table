@@ -148,7 +148,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                         setStack(SLOT_BOOK, enchantedBook);
                     }
                 }
-                // Only consume the exact amount of input used for this uncrafting
                 int consumed = inputConsumed > 0 ? inputConsumed : currentInput.getCount();
                 if (currentInput.getCount() > consumed) {
                     currentInput.setCount(currentInput.getCount() - consumed);
@@ -261,7 +260,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         if (!(world instanceof ServerWorld serverWorld)) return;
         matchingRecipes.clear();
 
-        // Check for armor trim via component API (replaces ArmorTrim.getTrim in 1.21.1)
         ArmorTrim trim = input.get(DataComponentTypes.TRIM);
         if (trim != null) {
             for (RecipeEntry<SmithingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
@@ -368,7 +366,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         ItemStack inputStack = getStack(SLOT_INPUT);
         if (inputStack.isEmpty()) return;
 
-        // Check for armor trim via component API (replaces ArmorTrim.getTrim in 1.21.1)
         ArmorTrim trim = inputStack.get(DataComponentTypes.TRIM);
 
         if (trim != null) {
@@ -385,6 +382,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             ItemStack baseStack = inputStack.copy();
             baseStack.setCount(inputCount);
             baseStack.remove(DataComponentTypes.TRIM);
+            // 有书时去除附魔（拿走时由 onOutputChanged 转移到书）；无书时保留附魔在装备上
+            ItemStack bookSlot = getStack(SLOT_BOOK);
+            if (!bookSlot.isEmpty() && bookSlot.getItem() == Items.BOOK) {
+                baseStack.remove(DataComponentTypes.ENCHANTMENTS);
+            }
             setStack(SLOT_OUTPUT_START + 1, baseStack);
 
             // 槽位 2: 纹饰矿物材料
