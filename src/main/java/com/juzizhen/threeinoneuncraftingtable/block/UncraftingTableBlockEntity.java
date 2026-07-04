@@ -152,10 +152,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                 int consumed = inputConsumed > 0 ? inputConsumed : currentInput.getCount();
                 if (currentInput.getCount() > consumed) {
                     currentInput.setCount(currentInput.getCount() - consumed);
-                    // Re-search recipes for the remaining input items
-                    matchingRecipes.clear();
-                    selectedRecipeIndex = 0;
-                    searchRecipeToOutput(getStack(SLOT_INPUT));
                 } else {
                     setStack(SLOT_INPUT, ItemStack.EMPTY);
                 }
