@@ -50,6 +50,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     public int onSlotClickIndex = 0;
     public int experienceCost = 0;
     private int selectedRecipeIndex = 0;
+    private int inputConsumed = 0;
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
@@ -157,7 +158,12 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                         setStack(SLOT_BOOK, enchantedBook);
                     }
                 }
-                setStack(SLOT_INPUT, ItemStack.EMPTY);
+                int consumed = inputConsumed > 0 ? inputConsumed : currentInput.getCount();
+                if (currentInput.getCount() > consumed) {
+                    currentInput.setCount(currentInput.getCount() - consumed);
+                } else {
+                    setStack(SLOT_INPUT, ItemStack.EMPTY);
+                }
             } else if (outputGetCount < 0) {
                 outputGetCount = 0;
             } else {
@@ -208,6 +214,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         noOutputs = true;
         outputGetCount = 0;
         experienceCost = 0;
+        inputConsumed = 0;
         markDirty();
     }
 
@@ -311,6 +318,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         experienceCost = cost;
         if (experienceCost < 1) experienceCost = 1;
+        inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
 
@@ -371,6 +379,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
             if (inputCount <= 0) return;
             experienceCost = configXpCost * inputCount;
+            inputConsumed = inputCount;
 
             // 槽位 0: 纹饰模板
             Item templateItem = trim.getPattern().value().templateItem().value();
@@ -381,6 +390,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             ItemStack baseStack = inputStack.copy();
             baseStack.setCount(inputCount);
             baseStack.removeSubNbt("Trim");
+            // 有书时去除附魔（拿走时由 onOutputChanged 转移到书）；无书时保留附魔在装备上
+            ItemStack bookSlot = getStack(SLOT_BOOK);
+            if (!bookSlot.isEmpty() && bookSlot.getItem() == Items.BOOK) {
+                baseStack.removeSubNbt("Enchantments");
+            }
             setStack(SLOT_OUTPUT_START + 1, baseStack);
 
             // 槽位 2: 纹饰矿物材料
@@ -412,6 +426,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         experienceCost = cost;
         if (experienceCost < 1) experienceCost = 1;
+        inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
         Ingredient[] parts = new Ingredient[3];
@@ -460,6 +475,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         experienceCost = cost;
         if (experienceCost < 1) experienceCost = 1;
+        inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
 
