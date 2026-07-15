@@ -34,14 +34,21 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
             context.drawItemInSlot(this.textRenderer, ghostBook, bookSlot.x + this.x, bookSlot.y + this.y);
         }
 
-        if (mouseX >= this.x + 121 && mouseX < this.x + 128 &&
+        if (mouseX >= this.x + 119 && mouseX < this.x + 126 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             context.drawTooltip(this.textRenderer,
                     Text.translatable("tooltip.three-in-one-uncrafting-table.prev_recipe"),
                     mouseX, mouseY);
         }
 
-        if (mouseX >= this.x + 137 && mouseX < this.x + 144 &&
+        if (mouseX >= this.x + 127 && mouseX < this.x + 138 &&
+                mouseY >= this.y + 73 && mouseY < this.y + 80) {
+            context.drawTooltip(this.textRenderer,
+                    Text.translatable("tooltip.three-in-one-uncrafting-table.move_all"),
+                    mouseX, mouseY);
+        }
+
+        if (mouseX >= this.x + 139 && mouseX < this.x + 146 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             context.drawTooltip(this.textRenderer,
                     Text.translatable("tooltip.three-in-one-uncrafting-table.next_recipe"),
@@ -57,20 +64,28 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
             context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21);
         }
 
-        boolean hoverLeft = mouseX >= this.x + 121 && mouseX < this.x + 128 &&
+        boolean hoverLeft = mouseX >= this.x + 119 && mouseX < this.x + 126 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82;
         if (hoverLeft) {
-            context.drawTexture(TEXTURE, this.x + 121, this.y + 71, 177, 35, 7, 11); // 激活
+            context.drawTexture(TEXTURE, this.x + 119, this.y + 71, 177, 35, 7, 11); // 激活
         } else {
-            context.drawTexture(TEXTURE, this.x + 121, this.y + 71, 177, 23, 7, 11); // 非激活
+            context.drawTexture(TEXTURE, this.x + 119, this.y + 71, 177, 23, 7, 11); // 非激活
         }
 
-        boolean hoverRight = mouseX >= this.x + 137 && mouseX < this.x + 144 &&
+        boolean hoverCenter = mouseX >= this.x + 127 && mouseX < this.x + 138 &&
+                mouseY >= this.y + 73 && mouseY < this.y + 80;
+        if (hoverCenter) {
+            context.drawTexture(TEXTURE, this.x + 127, this.y + 73, 177, 57, 11, 7); // 激活
+        } else {
+            context.drawTexture(TEXTURE, this.x + 127, this.y + 73, 177, 49, 11, 7);// 非激活
+        }
+
+        boolean hoverRight = mouseX >= this.x + 139 && mouseX < this.x + 146 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82;
         if (hoverRight) {
-            context.drawTexture(TEXTURE, this.x + 137, this.y + 71, 185, 35, 7, 11); // 激活
+            context.drawTexture(TEXTURE, this.x + 139, this.y + 71, 185, 35, 7, 11); // 激活
         } else {
-            context.drawTexture(TEXTURE, this.x + 137, this.y + 71, 185, 23, 7, 11); // 非激活
+            context.drawTexture(TEXTURE, this.x + 139, this.y + 71, 185, 23, 7, 11); // 非激活
         }
     }
 
@@ -97,7 +112,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (mouseX >= this.x + 121 && mouseX < this.x + 128 &&
+        if (mouseX >= this.x + 119 && mouseX < this.x + 126 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             if (this.client != null && this.client.interactionManager != null) {
                 this.client.interactionManager.clickButton(this.handler.syncId, 0);
@@ -106,7 +121,16 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
             return true;
         }
 
-        if (mouseX >= this.x + 137 && mouseX < this.x + 144 &&
+        if (mouseX >= this.x + 127 && mouseX < this.x + 138 &&
+                mouseY >= this.y + 73 && mouseY < this.y + 80) {
+            if (this.client != null && this.client.interactionManager != null) {
+                this.client.interactionManager.clickButton(this.handler.syncId, 2);
+            }
+            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            return true;
+        }
+
+        if (mouseX >= this.x + 139 && mouseX < this.x + 146 &&
                 mouseY >= this.y + 71 && mouseY < this.y + 82) {
             if (this.client != null && this.client.interactionManager != null) {
                 this.client.interactionManager.clickButton(this.handler.syncId, 1);
@@ -118,6 +142,3 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 }
-
-
-
