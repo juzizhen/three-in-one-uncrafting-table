@@ -34,5 +34,5 @@ Uncrafting Crafting Table Recipes.
 
 Enchantment Transfer.
 
-![Uncrafting Crafting Table Recipes](https://github.com/juzizhen/three-in-one-uncrafting-table/blob/main/image/6.gif)
+![Uncrafting Crafting Table Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/6.gif)
 ---
