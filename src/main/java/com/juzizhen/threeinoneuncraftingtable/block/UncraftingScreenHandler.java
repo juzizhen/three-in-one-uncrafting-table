@@ -173,6 +173,23 @@ public class UncraftingScreenHandler extends ScreenHandler {
 
     @Override
     public boolean onButtonClick(PlayerEntity player, int id) {
+        if (id == 2) {
+            // 一键收取：将所有输出槽物品移到背包，附魔书也一起移走
+            if (player.getWorld().isClient()) return true;
+            for (int i = UncraftingTableBlockEntity.SLOT_OUTPUT_START; i <= UncraftingTableBlockEntity.SLOT_OUTPUT_END; i++) {
+                Slot slot = this.slots.get(i);
+                if (slot.hasStack()) {
+                    quickMove(player, i);
+                }
+            }
+            // 书槽：如果是附魔书（不是普通书），也移到背包
+            Slot bookSlot = this.slots.get(0);
+            if (bookSlot.hasStack() && bookSlot.getStack().isOf(Items.ENCHANTED_BOOK)) {
+                quickMove(player, 0);
+            }
+            return true;
+        }
+
         if (blockEntity.outputGetCount == 0) {
             if (id == 0) {
                 if (blockEntity.matchingRecipes.size() > 1) {
