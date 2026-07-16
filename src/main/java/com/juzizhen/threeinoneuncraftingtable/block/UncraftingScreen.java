@@ -85,25 +85,25 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         boolean hoverLeft = mouseX >= this.x + BTN_LEFT_X && mouseX < this.x + BTN_LEFT_X + BTN_LEFT_W &&
                 mouseY >= this.y + BTN_LEFT_Y && mouseY < this.y + BTN_LEFT_Y + BTN_LEFT_H;
         if (hoverLeft) {
-            context.drawTexture(TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 35, BTN_LEFT_W, BTN_LEFT_H);
+            context.drawTexture(TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 35, 7, 11);
         } else {
-            context.drawTexture(TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 23, BTN_LEFT_W, BTN_LEFT_H);
+            context.drawTexture(TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 23, 7, 11);
         }
 
         boolean hoverCenter = mouseX >= this.x + BTN_CENTER_X && mouseX < this.x + BTN_CENTER_X + BTN_CENTER_W &&
                 mouseY >= this.y + BTN_CENTER_Y && mouseY < this.y + BTN_CENTER_Y + BTN_CENTER_H;
         if (hoverCenter) {
-            context.drawTexture(TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 57, BTN_CENTER_W, BTN_CENTER_H);
+            context.drawTexture(TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 57, 11, 7);
         } else {
-            context.drawTexture(TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 49, BTN_CENTER_W, BTN_CENTER_H);
+            context.drawTexture(TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 49, 11, 7);
         }
 
         boolean hoverRight = mouseX >= this.x + BTN_RIGHT_X && mouseX < this.x + BTN_RIGHT_X + BTN_RIGHT_W &&
                 mouseY >= this.y + BTN_RIGHT_Y && mouseY < this.y + BTN_RIGHT_Y + BTN_RIGHT_H;
         if (hoverRight) {
-            context.drawTexture(TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 35, BTN_RIGHT_W, BTN_RIGHT_H);
+            context.drawTexture(TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 35, 7, 11);
         } else {
-            context.drawTexture(TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 23, BTN_RIGHT_W, BTN_RIGHT_H);
+            context.drawTexture(TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 23, 7, 11);
         }
     }
 
