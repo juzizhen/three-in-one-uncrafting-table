@@ -11,7 +11,9 @@ public class ModConfig {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @SuppressWarnings("unused")
-    public int xpCost = 5;
+    public int baseXpCost = 5;
+    @SuppressWarnings("unused")
+    public float xpCostMultiplier = 1.0F;
     @SuppressWarnings("unused")
     public boolean enableCrafting = true;
     @SuppressWarnings("unused")
@@ -22,14 +24,17 @@ public class ModConfig {
     public boolean enableEnchantmentTransfer = true;
 
     public static ModConfig load() {
+        ModConfig config = null;
         if (CONFIG_FILE.exists()) {
             try (Reader reader = new FileReader(CONFIG_FILE)) {
-                return gson.fromJson(reader, ModConfig.class);
+                config = gson.fromJson(reader, ModConfig.class);
             } catch (IOException e) {
                 ThreeInOneUncraftingTable.LOGGER.warn(e.getMessage());
             }
         }
-        ModConfig config = new ModConfig();
+        if (config == null) {
+            config = new ModConfig();
+        }
         config.save();
         return config;
     }

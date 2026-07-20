@@ -42,6 +42,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     public static final int SLOT_OUTPUT_START = 2;
     public static final int SLOT_OUTPUT_END = 10;
     private static int configXpCost = 0;
+    private static float configXpMultiplier = 1.0F;
     final List<Recipe<?>> matchingRecipes = new ArrayList<>();
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(11, ItemStack.EMPTY);
     public int outputCounter = 0;
@@ -54,7 +55,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
-        configXpCost = ThreeInOneUncraftingTable.CONFIG.xpCost;
+        configXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
+        configXpMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
     }
 
     public boolean hasOutputItems() {
@@ -304,7 +306,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         int multiplier = inputCount / recipeOutputCount;
 
         if (multiplier <= 0) return;
-        int cost = Math.round(configXpCost * multiplier * 0.8F - multiplier);
+        int cost = Math.round(configXpMultiplier * (configXpCost * multiplier * 0.8F - multiplier));
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
             int damage = input.getDamage();
@@ -314,10 +316,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
             int enchantCount = input.getEnchantments().size();
-            cost += enchantCount * 2;
+            cost += Math.round(enchantCount * 2 * configXpMultiplier);
         }
         experienceCost = cost;
-        if (experienceCost < 1) experienceCost = 1;
         inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
@@ -378,7 +379,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             ArmorTrim trim = optionalTrim.get();
 
             if (inputCount <= 0) return;
-            experienceCost = configXpCost * inputCount;
+            experienceCost = Math.round(configXpCost * configXpMultiplier * inputCount);
             inputConsumed = inputCount;
 
             // 槽位 0: 纹饰模板
@@ -412,7 +413,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         int multiplier = inputCount / recipeOutputCount;
 
         if (multiplier <= 0) return;
-        int cost = Math.round(configXpCost * multiplier * 1.5F);
+        int cost = Math.round(configXpCost * configXpMultiplier * multiplier * 1.5F);
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
             int damage = input.getDamage();
@@ -422,10 +423,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
             int enchantCount = input.getEnchantments().size();
-            cost += enchantCount * 2;
+            cost += Math.round(enchantCount * 2 * configXpMultiplier);
         }
         experienceCost = cost;
-        if (experienceCost < 1) experienceCost = 1;
         inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
@@ -461,7 +461,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
-        int cost = Math.round(configXpCost * multiplier * 0.2F);
+        int cost = Math.round(configXpCost * configXpMultiplier * multiplier * 0.2F);
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
             int damage = input.getDamage();
@@ -471,10 +471,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
             int enchantCount = input.getEnchantments().size();
-            cost += enchantCount * 2;
+            cost += Math.round(enchantCount * 2 * configXpMultiplier);
         }
         experienceCost = cost;
-        if (experienceCost < 1) experienceCost = 1;
         inputConsumed = multiplier * recipeOutputCount;
 
         int totalOutputItems = 0;
