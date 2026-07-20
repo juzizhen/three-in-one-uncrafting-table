@@ -309,8 +309,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().getSize();
-            cost += Math.round(enchantCount * 2 * configXpMultiplier);
+            ItemEnchantmentsComponent enchantments = input.getEnchantments();
+            for (RegistryEntry<Enchantment> entry : enchantments.getEnchantments()) {
+                int lvl = enchantments.getLevel(entry);
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+            }
         }
         experienceCost = cost;
         inputConsumed = multiplier * recipeOutputCount;
@@ -414,8 +417,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().getSize();
-            cost += Math.round(enchantCount * 2 * configXpMultiplier);
+            ItemEnchantmentsComponent enchantments = input.getEnchantments();
+            for (RegistryEntry<Enchantment> entry : enchantments.getEnchantments()) {
+                int lvl = enchantments.getLevel(entry);
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+            }
         }
         experienceCost = cost;
         inputConsumed = multiplier * recipeOutputCount;
@@ -462,8 +468,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().getSize();
-            cost += Math.round(enchantCount * 2 * configXpMultiplier);
+            ItemEnchantmentsComponent enchantments = input.getEnchantments();
+            for (RegistryEntry<Enchantment> entry : enchantments.getEnchantments()) {
+                int lvl = enchantments.getLevel(entry);
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+            }
         }
         experienceCost = cost;
         inputConsumed = multiplier * recipeOutputCount;
