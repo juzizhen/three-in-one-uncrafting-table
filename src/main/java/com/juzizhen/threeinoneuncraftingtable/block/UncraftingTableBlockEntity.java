@@ -315,8 +315,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().size();
-            cost += Math.round(enchantCount * 2 * configXpMultiplier);
+            NbtList enchantments = input.getEnchantments();
+            for (int i = 0; i < enchantments.size(); i++) {
+                int lvl = enchantments.getCompound(i).getInt("lvl");
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+            }
         }
         experienceCost = cost;
         inputConsumed = multiplier * recipeOutputCount;
@@ -422,8 +425,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().size();
-            cost += Math.round(enchantCount * 2 * configXpMultiplier);
+            NbtList enchantments = input.getEnchantments();
+            for (int i = 0; i < enchantments.size(); i++) {
+                int lvl = enchantments.getCompound(i).getInt("lvl");
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+            }
         }
         experienceCost = cost;
         inputConsumed = multiplier * recipeOutputCount;
@@ -470,8 +476,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
-            int enchantCount = input.getEnchantments().size();
-            cost += Math.round(enchantCount * 2 * configXpMultiplier);
+            NbtList enchantments = input.getEnchantments();
+            for (int i = 0; i < enchantments.size(); i++) {
+                int lvl = enchantments.getCompound(i).getInt("lvl");
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+            }
         }
         experienceCost = cost;
         inputConsumed = multiplier * recipeOutputCount;
