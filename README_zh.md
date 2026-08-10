@@ -2,7 +2,7 @@
 
 > 这是个三合一拆解台。
 
-![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/src/main/resources/assets/three-in-one-uncrafting-table/icon.png)
+![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/icon.png)
 
 ---
 ## 📖 简介

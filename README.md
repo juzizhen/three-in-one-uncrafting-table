@@ -2,7 +2,7 @@
 
 > This is a three-in-one uncrafting table.
 
-![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/src/main/resources/assets/three-in-one-uncrafting-table/icon.png)
+![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/icon.png)
 
 ### 👉[中文 README_zh](https://github.com/juzizhen/three-in-one-uncrafting-table/blob/1.21.1/README_zh.md)👈
 
