@@ -36,3 +36,6 @@ Enchantment Transfer.
 
 ![Uncrafting Crafting Table Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/6.gif)
 ---
+## Links
+- [Modrinth](https://modrinth.com/mod/three-in-one-uncrafting-table)
+- [Curseforge](https://www.curseforge.com/minecraft/mc-mods/three-in-one-uncrafting-table)

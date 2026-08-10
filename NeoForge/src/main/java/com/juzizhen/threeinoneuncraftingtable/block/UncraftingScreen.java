@@ -9,9 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 import java.util.List;
 
@@ -48,14 +45,6 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
 
-        // Ghost book
-        Slot bookSlot = this.menu.slots.getFirst();
-        if (!bookSlot.hasItem()) {
-            ItemStack ghostBook = new ItemStack(Items.BOOK);
-            guiGraphics.renderItem(ghostBook, bookSlot.x + this.leftPos, bookSlot.y + this.topPos);
-        }
-
-        // Tooltips for buttons
         if (isHoveringLeftButton(mouseX, mouseY)) {
             guiGraphics.renderTooltip(this.font,
                     List.of(Component.translatable("tooltip." + ThreeInOneUncraftingTable.MOD_ID + ".prev_recipe").getVisualOrderText()),

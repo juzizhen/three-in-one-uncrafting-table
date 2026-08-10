@@ -24,42 +24,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ThreeInOneUncraftingTable implements ModInitializer {
-	public static final String MOD_ID = "three_in_one_uncrafting_table";
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public static ModConfig CONFIG;
+    public static final String MOD_ID = "three_in_one_uncrafting_table";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Block UNCRAFTING_TABLE = Registry.register(
+            Registries.BLOCK,
+            Identifier.of(MOD_ID, "uncrafting_table"),
+            new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE))
+    );
+    public static final Item UNCRAFTING_TABLE_ITEM = Registry.register(
+            Registries.ITEM,
+            Identifier.of(MOD_ID, "uncrafting_table"),
+            new BlockItem(UNCRAFTING_TABLE, new Item.Settings())
+    );
+    public static final BlockEntityType<UncraftingTableBlockEntity> UNCRAFTING_TABLE_BLOCK_ENTITY =
+            Registry.register(
+                    Registries.BLOCK_ENTITY_TYPE,
+                    Identifier.of(MOD_ID, "uncrafting_table"),
+                    BlockEntityType.Builder.create(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE).build()
+            );
+    public static final ScreenHandlerType<UncraftingScreenHandler> UNCRAFTING_SCREEN_HANDLER =
+            Registry.register(
+                    Registries.SCREEN_HANDLER,
+                    Identifier.of(MOD_ID, "uncrafting_table"),
+                    new ExtendedScreenHandlerType<>(UncraftingScreenHandler::new, BlockPos.PACKET_CODEC)
+            );
+    public static ModConfig CONFIG;
 
-	@Override
-	public void onInitialize() {
-		CONFIG = ModConfig.load();
+    @Override
+    public void onInitialize() {
+        CONFIG = ModConfig.load();
 
-		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
 
-		LOGGER.info("Three In One Uncrafting Table Initialized!");
-	}
-
-	public static final Block UNCRAFTING_TABLE = Registry.register(
-			Registries.BLOCK,
-			Identifier.of(MOD_ID, "uncrafting_table"),
-			new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE))
-	);
-
-	public static final Item UNCRAFTING_TABLE_ITEM = Registry.register(
-			Registries.ITEM,
-			Identifier.of(MOD_ID, "uncrafting_table"),
-			new BlockItem(UNCRAFTING_TABLE, new Item.Settings())
-	);
-
-	public static final BlockEntityType<UncraftingTableBlockEntity> UNCRAFTING_TABLE_BLOCK_ENTITY =
-			Registry.register(
-					Registries.BLOCK_ENTITY_TYPE,
-					Identifier.of(MOD_ID, "uncrafting_table"),
-					BlockEntityType.Builder.create(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE).build()
-			);
-
-	public static final ScreenHandlerType<UncraftingScreenHandler> UNCRAFTING_SCREEN_HANDLER =
-			Registry.register(
-					Registries.SCREEN_HANDLER,
-					Identifier.of(MOD_ID, "uncrafting_table"),
-					new ExtendedScreenHandlerType<>(UncraftingScreenHandler::new, BlockPos.PACKET_CODEC)
-			);
+        LOGGER.info("Three In One Uncrafting Table Initialized!");
+    }
 }

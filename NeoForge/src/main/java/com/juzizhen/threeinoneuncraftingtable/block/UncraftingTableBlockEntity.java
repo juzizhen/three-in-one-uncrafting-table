@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -22,9 +21,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
     public static final int SLOT_BOOK = 1;
     public static final int SLOT_OUTPUT_START = 2;
     public static final int SLOT_OUTPUT_END = 10;
-
-    public int experienceCost = 0;
-
     private final ItemStackHandler inventory = new ItemStackHandler(11) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -34,6 +30,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             }
         }
     };
+    public int experienceCost = 0;
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY.get(), pos, state);
@@ -41,7 +38,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
 
     public static void tick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state,
                             UncraftingTableBlockEntity blockEntity) {
-        // Reserved for future uncrafting logic
     }
 
     public ItemStackHandler getInventory() {

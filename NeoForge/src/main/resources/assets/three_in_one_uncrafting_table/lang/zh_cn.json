@@ -1,7 +1,6 @@
 {
   "block.three_in_one_uncrafting_table.uncrafting_table": "拆解台",
   "container.three_in_one_uncrafting_table.uncrafting_table": "拆解台",
-
   "tooltip.three_in_one_uncrafting_table.prev_recipe": "上一配方",
   "tooltip.three_in_one_uncrafting_table.next_recipe": "下一配方",
   "tooltip.three_in_one_uncrafting_table.move_all": "一键收取",

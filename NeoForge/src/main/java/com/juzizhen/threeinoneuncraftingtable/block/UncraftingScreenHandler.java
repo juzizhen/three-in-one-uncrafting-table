@@ -5,7 +5,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -79,7 +78,7 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
             // Player inventory → book slot or input slot
             boolean success = false;
             if (originalStack.is(Items.BOOK)) {
-                Slot bookSlot = this.slots.get(0);
+                Slot bookSlot = this.slots.getFirst();
                 if (!bookSlot.hasItem()) {
                     ItemStack split = originalStack.split(1);
                     bookSlot.set(split);
@@ -137,7 +136,7 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
                 }
             }
             // Also move enchanted book from book slot
-            Slot bookSlot = this.slots.get(0);
+            Slot bookSlot = this.slots.getFirst();
             if (bookSlot.hasItem() && bookSlot.getItem().is(Items.ENCHANTED_BOOK)) {
                 quickMoveStack(player, 0);
             }
@@ -162,14 +161,9 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
         return false;
     }
 
-    // --- Custom slot classes ---
-
     private static class OutputSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
-        private final net.neoforged.neoforge.items.ItemStackHandler handler;
-
         public OutputSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler, int index, int x, int y) {
             super(handler, index, x, y);
-            this.handler = handler;
         }
 
         @Override

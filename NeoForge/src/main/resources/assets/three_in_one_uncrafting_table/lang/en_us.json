@@ -1,7 +1,6 @@
 {
   "block.three_in_one_uncrafting_table.uncrafting_table": "Uncrafting Table",
   "container.three_in_one_uncrafting_table.uncrafting_table": "Uncrafting Table",
-
   "tooltip.three_in_one_uncrafting_table.prev_recipe": "Previous Recipe",
   "tooltip.three_in_one_uncrafting_table.next_recipe": "Next Recipe",
   "tooltip.three_in_one_uncrafting_table.move_all": "Move All to Inventory",
