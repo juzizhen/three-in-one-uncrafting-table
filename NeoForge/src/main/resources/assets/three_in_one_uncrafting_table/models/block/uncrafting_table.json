@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "three_in_one_uncrafting_table:block/uncrafting_table_bottom",
+    "east": "three_in_one_uncrafting_table:block/uncrafting_table_side",
+    "north": "three_in_one_uncrafting_table:block/uncrafting_table_front",
+    "particle": "three_in_one_uncrafting_table:block/uncrafting_table_front",
+    "south": "three_in_one_uncrafting_table:block/uncrafting_table_front",
+    "up": "three_in_one_uncrafting_table:block/uncrafting_table_top",
+    "west": "three_in_one_uncrafting_table:block/uncrafting_table_side"
+  }
+}

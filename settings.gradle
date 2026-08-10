@@ -1,12 +1,11 @@
 pluginManagement {
-	repositories {
-		maven {
-			name = 'Fabric'
-			url = 'https://maven.fabricmc.net/'
-		}
-		mavenCentral()
-		gradlePluginPortal()
-	}
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven { name = 'NeoForge'; url = 'https://maven.neoforged.net/releases' }
+    }
 }
 
 rootProject.name = 'three-in-one-uncrafting-table'
+include("Fabric", "NeoForge")

@@ -17,14 +17,19 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '21'
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
         run: ./gradlew build
-      - name: capture build artifacts
+      - name: capture Fabric artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: Artifacts
-          path: build/libs/
+          name: Fabric-Artifacts
+          path: Fabric/build/libs/
+      - name: capture NeoForge artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: NeoForge-Artifacts
+          path: NeoForge/build/libs/
