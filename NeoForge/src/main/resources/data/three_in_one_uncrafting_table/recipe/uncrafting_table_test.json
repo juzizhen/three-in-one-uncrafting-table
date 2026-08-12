@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "three_in_one_uncrafting_table:uncrafting_table"
+    }
+  ],
+  "result": {
+    "id": "three_in_one_uncrafting_table:uncrafting_table",
+    "count": 1
+  }
+}

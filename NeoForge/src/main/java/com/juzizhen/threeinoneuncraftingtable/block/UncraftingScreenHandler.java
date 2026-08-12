@@ -5,6 +5,8 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -13,39 +15,49 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
 
     public final UncraftingTableBlockEntity blockEntity;
 
-    // Server-side constructor
     public UncraftingScreenHandler(int containerId, Inventory playerInventory, UncraftingTableBlockEntity blockEntity) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER.get(), containerId);
         this.blockEntity = blockEntity;
 
         var handler = blockEntity.getInventory();
 
-        // Slot 0: Book
-        this.addSlot(new BookSlotItemHandler(handler, UncraftingTableBlockEntity.SLOT_BOOK, 20, 35));
-        // Slot 1: Input
-        this.addSlot(new InputSlotItemHandler(handler, UncraftingTableBlockEntity.SLOT_INPUT, 45, 35));
+        this.addSlot(new BookSlotItemHandler(handler, blockEntity, UncraftingTableBlockEntity.SLOT_BOOK, 20, 35));
+        this.addSlot(new InputSlotItemHandler(handler, blockEntity, UncraftingTableBlockEntity.SLOT_INPUT, 45, 35));
 
-        // Slots 2-10: Output (3x3)
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 3; x++) {
                 int slotIndex = UncraftingTableBlockEntity.SLOT_OUTPUT_START + y * 3 + x;
-                this.addSlot(new OutputSlotItemHandler(handler, slotIndex, 106 + x * 18, 17 + y * 18));
+                this.addSlot(new OutputSlotItemHandler(handler, blockEntity, slotIndex, 106 + x * 18, 17 + y * 18));
             }
         }
 
-        // Player inventory (slots 11-37)
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 9; x++) {
                 this.addSlot(new Slot(playerInventory, x + y * 9 + 9, 8 + x * 18, 84 + y * 18));
             }
         }
-        // Hotbar (slots 38-46)
         for (int x = 0; x < 9; x++) {
             this.addSlot(new Slot(playerInventory, x, 8 + x * 18, 142));
         }
+
+        this.addDataSlots(new ContainerData() {
+            @Override
+            public int get(int index) {
+                return blockEntity.experienceCost;
+            }
+
+            @Override
+            public void set(int index, int value) {
+                blockEntity.experienceCost = value;
+            }
+
+            @Override
+            public int getCount() {
+                return 1;
+            }
+        });
     }
 
-    // Client-side constructor (reads BlockPos from network buffer)
     public UncraftingScreenHandler(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory,
                 (UncraftingTableBlockEntity) playerInventory.player.level().getBlockEntity(data.readBlockPos()));
@@ -53,6 +65,10 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int slotIndex) {
+        if (player.level().isClientSide()) {
+            return ItemStack.EMPTY;
+        }
+
         Slot slot = this.slots.get(slotIndex);
         if (!slot.hasItem()) {
             return ItemStack.EMPTY;
@@ -61,36 +77,44 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
         ItemStack originalStack = slot.getItem();
         ItemStack movedStack = originalStack.copy();
 
+        boolean triggerOutputChange = false;
+
         if (slotIndex >= 0 && slotIndex <= 1) {
-            // Book/Input → player inventory/hotbar
-            if (!this.moveItemStackTo(originalStack, 11, 47, false)) {
-                return ItemStack.EMPTY;
+            if (!this.moveItemStackTo(originalStack, 11, 38, false)) {
+                if (!this.moveItemStackTo(originalStack, 38, 47, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
         } else if (slotIndex >= 2 && slotIndex <= 10) {
-            // Output → player inventory/hotbar
             if (blockEntity.experienceCost > 0 && !player.isCreative() && player.experienceLevel < blockEntity.experienceCost) {
                 return ItemStack.EMPTY;
             }
-            if (!this.moveItemStackTo(originalStack, 11, 47, false)) {
-                return ItemStack.EMPTY;
+            if (!this.moveItemStackTo(originalStack, 11, 38, false)) {
+                if (!this.moveItemStackTo(originalStack, 38, 47, false)) {
+                    return ItemStack.EMPTY;
+                }
+            }
+            if (originalStack.getCount() < movedStack.getCount()) {
+                triggerOutputChange = true;
             }
         } else {
-            // Player inventory → book slot or input slot
             boolean success = false;
+
             if (originalStack.is(Items.BOOK)) {
                 Slot bookSlot = this.slots.getFirst();
                 if (!bookSlot.hasItem()) {
-                    ItemStack split = originalStack.split(1);
-                    bookSlot.set(split);
+                    bookSlot.set(originalStack.split(1));
                     bookSlot.setChanged();
                     success = true;
                 }
             }
+
             if (!success) {
                 if (this.moveItemStackTo(originalStack, 1, 2, false)) {
                     success = true;
                 }
             }
+
             if (!success) {
                 return ItemStack.EMPTY;
             }
@@ -106,8 +130,27 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
 
+        if (triggerOutputChange) {
+            // 输出槽：只按实际取出的数量调用一次 onOutputChanged。
+            // 不能调用 slot.onTake：OutputSlotItemHandler.onTake 会用剩余堆（可能为空）再次触发 onOutputChanged，
+            // 此时输入尚未被消耗，补货逻辑会基于未消耗的输入再生成一批输出，导致刷物品。
+            ItemStack takenStack = movedStack.copy();
+            takenStack.setCount(movedStack.getCount() - originalStack.getCount());
+            blockEntity.onOutputChanged(takenStack, player);
+            return ItemStack.EMPTY;
+        }
+
         slot.onTake(player, originalStack);
+
         return movedStack;
+    }
+
+    @Override
+    public void clicked(int slotIndex, int button, ClickType clickType, Player player) {
+        if (slotIndex >= 0 && slotIndex < this.slots.size()) {
+            blockEntity.onSlotClickIndex = slotIndex;
+        }
+        super.clicked(slotIndex, button, clickType, player);
     }
 
     @Override
@@ -127,7 +170,6 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id == 2) {
-            // Collect all: move output items to player inventory
             if (player.level().isClientSide()) return true;
             for (int i = UncraftingTableBlockEntity.SLOT_OUTPUT_START; i <= UncraftingTableBlockEntity.SLOT_OUTPUT_END; i++) {
                 Slot slot = this.slots.get(i);
@@ -135,12 +177,25 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
                     quickMoveStack(player, i);
                 }
             }
-            // Also move enchanted book from book slot
             Slot bookSlot = this.slots.getFirst();
             if (bookSlot.hasItem() && bookSlot.getItem().is(Items.ENCHANTED_BOOK)) {
                 quickMoveStack(player, 0);
             }
             return true;
+        }
+
+        if (blockEntity.outputGetCount == 0) {
+            if (id == 0) {
+                if (blockEntity.matchingRecipes.size() > 1) {
+                    blockEntity.cycleRecipe(-1);
+                }
+                return true;
+            } else if (id == 1) {
+                if (blockEntity.matchingRecipes.size() > 1) {
+                    blockEntity.cycleRecipe(1);
+                }
+                return true;
+            }
         }
         return super.clickMenuButton(player, id);
     }
@@ -162,30 +217,80 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
     }
 
     private static class OutputSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
-        public OutputSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler, int index, int x, int y) {
+        private final UncraftingTableBlockEntity blockEntity;
+
+        public OutputSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler,
+                                      UncraftingTableBlockEntity blockEntity, int index, int x, int y) {
             super(handler, index, x, y);
+            this.blockEntity = blockEntity;
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
             return false;
         }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            if (blockEntity.experienceCost > 0 && !player.isCreative() && player.experienceLevel < blockEntity.experienceCost) {
+                return false;
+            }
+            return super.mayPickup(player);
+        }
+
+        @Override
+        public void onTake(Player player, ItemStack stack) {
+            super.onTake(player, stack);
+            blockEntity.onOutputChanged(stack, player);
+        }
     }
 
     private static class InputSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
-        public InputSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler, int index, int x, int y) {
+        private final UncraftingTableBlockEntity blockEntity;
+
+        public InputSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler,
+                                    UncraftingTableBlockEntity blockEntity, int index, int x, int y) {
             super(handler, index, x, y);
+            this.blockEntity = blockEntity;
+        }
+
+        @Override
+        public void set(ItemStack newStack) {
+            super.set(newStack);
+            blockEntity.onInputChanged(false);
+        }
+
+        @Override
+        public void onTake(Player player, ItemStack stack) {
+            super.onTake(player, stack);
+            blockEntity.onInputChanged(false);
         }
     }
 
     private static class BookSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
-        public BookSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler, int index, int x, int y) {
+        private final UncraftingTableBlockEntity blockEntity;
+
+        public BookSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler,
+                                   UncraftingTableBlockEntity blockEntity, int index, int x, int y) {
             super(handler, index, x, y);
+            this.blockEntity = blockEntity;
+        }
+
+        @Override
+        public void set(ItemStack newStack) {
+            super.set(newStack);
+            blockEntity.onInputChanged(true);
         }
 
         @Override
         public int getMaxStackSize() {
             return 1;
+        }
+
+        @Override
+        public void onTake(Player player, ItemStack stack) {
+            super.onTake(player, stack);
+            blockEntity.onInputChanged(true);
         }
 
         @Override
