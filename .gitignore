@@ -41,3 +41,4 @@ replay_*.log
 
 # util
 version/
+/net
