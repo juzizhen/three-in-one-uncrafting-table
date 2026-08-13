@@ -35,8 +35,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     public static final int SLOT_BOOK = 1;
     public static final int SLOT_OUTPUT_START = 2;
     public static final int SLOT_OUTPUT_END = 10;
-    private static int configXpCost = 0;
-    private static float configXpMultiplier = 1.0F;
     final List<RecipeEntry<?>> matchingRecipes = new ArrayList<>();
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(11, ItemStack.EMPTY);
     public int outputCounter = 0;
@@ -49,8 +47,6 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
-        configXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
-        configXpMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
     }
 
     public boolean hasOutputItems() {
@@ -115,7 +111,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
         hasOutputItems = hasOutputItems();
 
-        if (!hasOutputItems && getStack(SLOT_INPUT) == ItemStack.EMPTY) {
+        if (!hasOutputItems && getStack(SLOT_INPUT).isEmpty()) {
             initialization();
         }
 
@@ -125,6 +121,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     public void onOutputChanged(ItemStack stack, PlayerEntity player) {
         if (world == null || world.isClient) return;
+        // 空堆不触发任何消耗/补货逻辑，避免在输入被消耗前错误地重新填充输出槽（刷物品）
+        if (stack.isEmpty()) return;
         boolean hasOutputItems;
         ItemStack currentInput = getStack(SLOT_INPUT);
 
@@ -135,7 +133,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                     player.addExperienceLevels(-experienceCost);
                     experienceCost = 0;
                 }
-                if (currentInput.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
+                if (currentInput.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()
+                        && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
                     ItemStack book = getStack(SLOT_BOOK);
                     if (book.getItem() == Items.BOOK) {
                         ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
@@ -184,14 +183,14 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                 }
             }
 
-            if (noOtherOutputs && getStack(SLOT_INPUT) != ItemStack.EMPTY) {
+            if (noOtherOutputs && !getStack(SLOT_INPUT).isEmpty()) {
                 clearOutputSlots();
                 searchRecipeToOutput(currentInput);
             }
         }
 
 
-        if (!hasOutputItems && getStack(SLOT_INPUT) == ItemStack.EMPTY) {
+        if (!hasOutputItems && getStack(SLOT_INPUT).isEmpty()) {
             initialization();
         }
 
@@ -211,33 +210,31 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     public void closeInventory(PlayerEntity player) {
+        if (world == null || world.isClient) return;
         if (outputGetCount > 0) {
+            // 已取过产物（经验已扣、输入已消耗）：归还剩余产物与剩余输入（不足以再拆解一批的残留）
             for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
-                ItemStack stack = getStack(i);
-                if (!stack.isEmpty()) {
-                    if (!player.getInventory().insertStack(stack)) {
-                        player.dropItem(stack, false);
-                    }
-                    setStack(i, ItemStack.EMPTY);
-                }
+                returnToPlayer(player, i);
             }
+            returnToPlayer(player, SLOT_INPUT);
         } else {
-            ItemStack input = getStack(SLOT_INPUT);
-            if (!input.isEmpty()) {
-                if (!player.getInventory().insertStack(input)) {
-                    player.dropItem(input, false);
-                }
-                setStack(SLOT_INPUT, ItemStack.EMPTY);
-            }
+            // 未取过产物：输出槽仅是预览，直接清空，只归还原料，避免原料+产物同时返还造成刷物品
+            clearOutputSlots();
+            returnToPlayer(player, SLOT_INPUT);
         }
-        ItemStack book = getStack(SLOT_BOOK);
-        if (!book.isEmpty()) {
-            if (!player.getInventory().insertStack(book)) {
-                player.dropItem(book, false);
-            }
-            setStack(SLOT_BOOK, ItemStack.EMPTY);
-        }
+        // 书本原样归还（关闭时不做附魔转移）
+        returnToPlayer(player, SLOT_BOOK);
         initialization();
+    }
+
+    private void returnToPlayer(PlayerEntity player, int slot) {
+        ItemStack stack = getStack(slot);
+        if (!stack.isEmpty()) {
+            if (!player.getInventory().insertStack(stack)) {
+                player.dropItem(stack, false);
+            }
+            setStack(slot, ItemStack.EMPTY);
+        }
     }
 
     private void updateOutputSlots() {
@@ -249,11 +246,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         ItemStack input = getStack(SLOT_INPUT);
         int inputCount = input.getCount();
 
-        if (recipe instanceof CraftingRecipe craftingRecipe) {
+        if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
             fillCraftingOutput(craftingRecipe, inputCount);
-        } else if (recipe instanceof SmithingRecipe smithingRecipe) {
+        } else if (recipe instanceof SmithingRecipe smithingRecipe && ThreeInOneUncraftingTable.CONFIG.enableSmithing) {
             fillSmithingOutput(smithingRecipe, inputCount);
-        } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe) {
+        } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && ThreeInOneUncraftingTable.CONFIG.enableStonecutting) {
             fillStonecuttingOutput(stonecuttingRecipe, inputCount);
         }
     }
@@ -294,13 +291,15 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     private void fillCraftingOutput(CraftingRecipe recipe, int inputCount) {
         if (world == null) return;
+        int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
+        float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
         List<Ingredient> ingredients = recipe.getIngredients();
         ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
         if (multiplier <= 0) return;
-        int cost = Math.round(configXpMultiplier * (configXpCost * multiplier * 0.8F - multiplier));
+        int cost = Math.max(0, Math.round(xpCostMultiplier * (baseXpCost * multiplier * 0.8F - multiplier)));
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
             int damage = input.getDamage();
@@ -308,11 +307,12 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             float lostRatio = (float) damage / (float) maxDamage;
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
-        if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
+        if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()
+                && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
             ItemEnchantmentsComponent enchantments = input.getEnchantments();
             for (RegistryEntry<Enchantment> entry : enchantments.getEnchantments()) {
                 int lvl = enchantments.getLevel(entry);
-                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * xpCostMultiplier);
             }
         }
         experienceCost = cost;
@@ -366,6 +366,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     private void fillSmithingOutput(Recipe<?> recipe, int inputCount) {
         if (world == null) return;
+        int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
+        float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
 
         ItemStack inputStack = getStack(SLOT_INPUT);
         if (inputStack.isEmpty()) return;
@@ -374,7 +376,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
         if (trim != null) {
             if (inputCount <= 0) return;
-            experienceCost = Math.round(configXpCost * configXpMultiplier * inputCount);
+            experienceCost = Math.round(ThreeInOneUncraftingTable.CONFIG.baseXpCost
+                    * ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier * inputCount);
             inputConsumed = inputCount;
 
             // 槽位 0: 纹饰模板
@@ -386,9 +389,10 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             ItemStack baseStack = inputStack.copy();
             baseStack.setCount(inputCount);
             baseStack.remove(DataComponentTypes.TRIM);
-            // 有书时去除附魔（拿走时由 onOutputChanged 转移到书）；无书时保留附魔在装备上
+            // 有书且启用附魔转移时去除附魔（拿走时由 onOutputChanged 转移到书）；否则保留附魔在装备上
             ItemStack bookSlot = getStack(SLOT_BOOK);
-            if (!bookSlot.isEmpty() && bookSlot.getItem() == Items.BOOK) {
+            if (!bookSlot.isEmpty() && bookSlot.getItem() == Items.BOOK
+                    && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
                 baseStack.remove(DataComponentTypes.ENCHANTMENTS);
             }
             setStack(SLOT_OUTPUT_START + 1, baseStack);
@@ -408,7 +412,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         int multiplier = inputCount / recipeOutputCount;
 
         if (multiplier <= 0) return;
-        int cost = Math.round(configXpCost * configXpMultiplier * multiplier * 1.5F);
+        int cost = Math.max(0, Math.round(baseXpCost * xpCostMultiplier * multiplier * 1.5F));
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
             int damage = input.getDamage();
@@ -416,11 +420,12 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             float lostRatio = (float) damage / (float) maxDamage;
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
-        if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
+        if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()
+                && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
             ItemEnchantmentsComponent enchantments = input.getEnchantments();
             for (RegistryEntry<Enchantment> entry : enchantments.getEnchantments()) {
                 int lvl = enchantments.getLevel(entry);
-                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * xpCostMultiplier);
             }
         }
         experienceCost = cost;
@@ -455,11 +460,14 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     private void fillStonecuttingOutput(StonecuttingRecipe recipe, int inputCount) {
         if (world == null) return;
+        int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
+        float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
         ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
-        int cost = Math.round(configXpCost * configXpMultiplier * multiplier * 0.2F);
+        if (multiplier <= 0) return;
+        int cost = Math.max(0, Math.round(baseXpCost * xpCostMultiplier * multiplier * 0.2F));
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
             int damage = input.getDamage();
@@ -467,11 +475,12 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             float lostRatio = (float) damage / (float) maxDamage;
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
-        if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()) {
+        if (input.hasEnchantments() && !getStack(SLOT_BOOK).isEmpty()
+                && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
             ItemEnchantmentsComponent enchantments = input.getEnchantments();
             for (RegistryEntry<Enchantment> entry : enchantments.getEnchantments()) {
                 int lvl = enchantments.getLevel(entry);
-                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * configXpMultiplier);
+                cost += Math.round(2 * (1.0F + (lvl - 1) * 0.5F) * xpCostMultiplier);
             }
         }
         experienceCost = cost;
@@ -544,7 +553,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     @Override
     public boolean canPlayerUse(PlayerEntity player) {
-        return pos.isWithinDistance(player.getBlockPos(), 4.5);
+        // 与 NeoForge 端及原版容器保持一致：8 格（平方距离 64）
+        return player.squaredDistanceTo((double) pos.getX() + 0.5, (double) pos.getY() + 0.5, (double) pos.getZ() + 0.5) <= 64.0;
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -56,11 +55,6 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
                 return 1;
             }
         });
-    }
-
-    public UncraftingScreenHandler(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
-        this(containerId, playerInventory,
-                (UncraftingTableBlockEntity) playerInventory.player.level().getBlockEntity(data.readBlockPos()));
     }
 
     @Override
@@ -235,7 +229,8 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
             if (blockEntity.experienceCost > 0 && !player.isCreative() && player.experienceLevel < blockEntity.experienceCost) {
                 return false;
             }
-            return super.mayPickup(player);
+            // 与 Fabric 端保持一致：光标持有物品时禁止拿取（禁止替换式点击）
+            return player.containerMenu.getCarried().isEmpty();
         }
 
         @Override

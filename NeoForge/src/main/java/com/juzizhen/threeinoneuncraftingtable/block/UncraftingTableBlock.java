@@ -2,12 +2,8 @@ package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -32,20 +28,9 @@ public class UncraftingTableBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
         if (!level.isClientSide()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof UncraftingTableBlockEntity blockEntity) {
-                player.openMenu(new MenuProvider() {
-                    @Override
-                    public Component getDisplayName() {
-                        return blockEntity.getDisplayName();
-                    }
-
-                    @Nullable
-                    @Override
-                    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-                        return blockEntity.createMenu(containerId, playerInventory, player);
-                    }
-                }, buf -> buf.writeBlockPos(pos));
+            // UncraftingTableBlockEntity 已实现 MenuProvider，直接传入即可，无需匿名包装
+            if (level.getBlockEntity(pos) instanceof UncraftingTableBlockEntity blockEntity) {
+                player.openMenu(blockEntity, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.SUCCESS;

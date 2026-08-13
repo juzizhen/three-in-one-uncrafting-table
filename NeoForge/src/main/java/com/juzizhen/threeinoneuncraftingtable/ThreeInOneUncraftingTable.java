@@ -16,8 +16,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -81,7 +79,6 @@ public class ThreeInOneUncraftingTable {
         MENUS.register(modEventBus);
 
         modEventBus.addListener(this::addCreative);
-        modEventBus.addListener(this::registerCapabilities);
         modEventBus.addListener(this::registerScreens);
 
         LOGGER.info("Three In One Uncrafting Table (NeoForge) Initialized!");
@@ -97,14 +94,6 @@ public class ThreeInOneUncraftingTable {
 
     private void registerScreens(RegisterMenuScreensEvent event) {
         event.register(UNCRAFTING_SCREEN_HANDLER.get(), UncraftingScreen::new);
-    }
-
-    private void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(
-                Capabilities.ItemHandler.BLOCK,
-                UNCRAFTING_TABLE_BLOCK_ENTITY.get(),
-                (blockEntity, side) -> blockEntity.getInventory()
-        );
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {

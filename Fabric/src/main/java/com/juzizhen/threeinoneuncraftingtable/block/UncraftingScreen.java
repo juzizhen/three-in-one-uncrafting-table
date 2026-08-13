@@ -6,9 +6,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -46,12 +43,6 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
 
-        Slot bookSlot = this.handler.slots.getFirst();
-        if (!bookSlot.hasStack()) {
-            ItemStack ghostBook = new ItemStack(Items.BOOK);
-            context.drawItemInSlot(this.textRenderer, ghostBook, bookSlot.x + this.x, bookSlot.y + this.y);
-        }
-
         if (mouseX >= this.x + BTN_LEFT_X && mouseX < this.x + BTN_LEFT_X + BTN_LEFT_W &&
                 mouseY >= this.y + BTN_LEFT_Y && mouseY < this.y + BTN_LEFT_Y + BTN_LEFT_H) {
             context.drawTooltip(this.textRenderer,
@@ -78,7 +69,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
         context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight, 256, 256);
 
-        if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) == ItemStack.EMPTY) {
+        if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
             context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21, 256, 256);
         }
 
@@ -111,7 +102,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         context.drawText(this.textRenderer, this.title, 8, 6, 4210752, false);
 
-        if (handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) != ItemStack.EMPTY) {
+        if (!handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
             int xpCost = this.handler.blockEntity.experienceCost;
             if (xpCost > 0) {
                 boolean hasEnoughXp = false;

@@ -1,6 +1,7 @@
 package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -18,15 +19,25 @@ public class UncraftingScreenHandler extends ScreenHandler {
 
     // Client-side constructor: receives BlockPos from ExtendedScreenHandlerType
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, BlockPos pos) {
-        this(syncId, playerInventory,
-                (Inventory) playerInventory.player.getWorld().getBlockEntity(pos));
+        this(syncId, playerInventory, getBlockEntity(playerInventory, pos));
+    }
+
+    private static UncraftingTableBlockEntity getBlockEntity(PlayerInventory playerInventory, BlockPos pos) {
+        BlockEntity blockEntity = playerInventory.player.getWorld().getBlockEntity(pos);
+        if (!(blockEntity instanceof UncraftingTableBlockEntity uncraftingTable)) {
+            throw new IllegalStateException("No UncraftingTableBlockEntity at " + pos);
+        }
+        return uncraftingTable;
     }
 
     // Server-side constructor
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER, syncId);
+        if (!(inventory instanceof UncraftingTableBlockEntity uncraftingTable)) {
+            throw new IllegalStateException("UncraftingScreenHandler requires an UncraftingTableBlockEntity");
+        }
         this.inventory = inventory;
-        this.blockEntity = (UncraftingTableBlockEntity) inventory;
+        this.blockEntity = uncraftingTable;
 
         this.addSlot(new BookSlot(blockEntity, UncraftingTableBlockEntity.SLOT_BOOK, 20, 35));
         this.addSlot(new InputSlot(blockEntity, UncraftingTableBlockEntity.SLOT_INPUT, 45, 35));
@@ -128,12 +139,15 @@ public class UncraftingScreenHandler extends ScreenHandler {
             return ItemStack.EMPTY;
         }
 
-        slot.onQuickTransfer(originalStack, movedStack);
-
         if (triggerOutputChange) {
-            blockEntity.onOutputChanged(movedStack, player);
+            // 输出槽：只按实际取出的数量调用一次 onOutputChanged，语义与 NeoForge 端保持一致
+            ItemStack takenStack = movedStack.copy();
+            takenStack.setCount(movedStack.getCount() - originalStack.getCount());
+            blockEntity.onOutputChanged(takenStack, player);
             return ItemStack.EMPTY;
         }
+
+        slot.onQuickTransfer(originalStack, movedStack);
 
         return movedStack;
     }
