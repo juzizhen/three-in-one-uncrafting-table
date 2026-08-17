@@ -44,6 +44,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     public int experienceCost = 0;
     private int selectedRecipeIndex = 0;
     private int inputConsumed = 0;
+    // 批量槽位变更时抑制逐次方块更新广播，批末合并为一次（可嵌套）
+    private int batchDepth = 0;
+    private boolean batchDirty = false;
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
@@ -61,22 +64,24 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     void searchRecipeToOutput(ItemStack currentInput) {
-        matchingRecipes.clear();
-        findMatchingRecipes(currentInput);
+        runBatched(() -> {
+            matchingRecipes.clear();
+            findMatchingRecipes(currentInput);
 
-        if (!matchingRecipes.isEmpty()) {
-            RecipeEntry<?> entry = matchingRecipes.get(selectedRecipeIndex);
-            Recipe<?> recipe = entry.value();
-            int inputCount = currentInput.getCount();
+            if (!matchingRecipes.isEmpty()) {
+                RecipeEntry<?> entry = matchingRecipes.get(selectedRecipeIndex);
+                Recipe<?> recipe = entry.value();
+                int inputCount = currentInput.getCount();
 
-            if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
-                fillCraftingOutput(craftingRecipe, inputCount);
-            } else if (recipe instanceof SmithingRecipe smithingRecipe && ThreeInOneUncraftingTable.CONFIG.enableSmithing) {
-                fillSmithingOutput(smithingRecipe, inputCount);
-            } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && ThreeInOneUncraftingTable.CONFIG.enableStonecutting) {
-                fillStonecuttingOutput(stonecuttingRecipe, inputCount);
+                if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
+                    fillCraftingOutput(craftingRecipe, inputCount);
+                } else if (recipe instanceof SmithingRecipe smithingRecipe && ThreeInOneUncraftingTable.CONFIG.enableSmithing) {
+                    fillSmithingOutput(smithingRecipe, inputCount);
+                } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && ThreeInOneUncraftingTable.CONFIG.enableStonecutting) {
+                    fillStonecuttingOutput(stonecuttingRecipe, inputCount);
+                }
             }
-        }
+        });
     }
 
     public void onInputChanged(boolean isBookInput) {
@@ -211,20 +216,22 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     public void closeInventory(PlayerEntity player) {
         if (world == null || world.isClient) return;
-        if (outputGetCount > 0) {
-            // 已取过产物（经验已扣、输入已消耗）：归还剩余产物与剩余输入（不足以再拆解一批的残留）
-            for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
-                returnToPlayer(player, i);
+        runBatched(() -> {
+            if (outputGetCount > 0) {
+                // 已取过产物（经验已扣、输入已消耗）：归还剩余产物与剩余输入（不足以再拆解一批的残留）
+                for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
+                    returnToPlayer(player, i);
+                }
+                returnToPlayer(player, SLOT_INPUT);
+            } else {
+                // 未取过产物：输出槽仅是预览，直接清空，只归还原料，避免原料+产物同时返还造成刷物品
+                clearOutputSlots();
+                returnToPlayer(player, SLOT_INPUT);
             }
-            returnToPlayer(player, SLOT_INPUT);
-        } else {
-            // 未取过产物：输出槽仅是预览，直接清空，只归还原料，避免原料+产物同时返还造成刷物品
-            clearOutputSlots();
-            returnToPlayer(player, SLOT_INPUT);
-        }
-        // 书本原样归还（关闭时不做附魔转移）
-        returnToPlayer(player, SLOT_BOOK);
-        initialization();
+            // 书本原样归还（关闭时不做附魔转移）
+            returnToPlayer(player, SLOT_BOOK);
+            initialization();
+        });
     }
 
     private void returnToPlayer(PlayerEntity player, int slot) {
@@ -238,55 +245,41 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     private void updateOutputSlots() {
-        clearOutputSlots();
-        if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
+        runBatched(() -> {
+            clearOutputSlots();
+            if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
 
-        RecipeEntry<?> entry = matchingRecipes.get(selectedRecipeIndex);
-        Recipe<?> recipe = entry.value();
-        ItemStack input = getStack(SLOT_INPUT);
-        int inputCount = input.getCount();
+            RecipeEntry<?> entry = matchingRecipes.get(selectedRecipeIndex);
+            Recipe<?> recipe = entry.value();
+            ItemStack input = getStack(SLOT_INPUT);
+            int inputCount = input.getCount();
 
-        if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
-            fillCraftingOutput(craftingRecipe, inputCount);
-        } else if (recipe instanceof SmithingRecipe smithingRecipe && ThreeInOneUncraftingTable.CONFIG.enableSmithing) {
-            fillSmithingOutput(smithingRecipe, inputCount);
-        } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && ThreeInOneUncraftingTable.CONFIG.enableStonecutting) {
-            fillStonecuttingOutput(stonecuttingRecipe, inputCount);
-        }
+            if (recipe instanceof CraftingRecipe craftingRecipe && ThreeInOneUncraftingTable.CONFIG.enableCrafting) {
+                fillCraftingOutput(craftingRecipe, inputCount);
+            } else if (recipe instanceof SmithingRecipe smithingRecipe && ThreeInOneUncraftingTable.CONFIG.enableSmithing) {
+                fillSmithingOutput(smithingRecipe, inputCount);
+            } else if (recipe instanceof StonecuttingRecipe stonecuttingRecipe && ThreeInOneUncraftingTable.CONFIG.enableStonecutting) {
+                fillStonecuttingOutput(stonecuttingRecipe, inputCount);
+            }
+        });
     }
 
     private void findMatchingRecipes(ItemStack input) {
         if (!(world instanceof ServerWorld serverWorld)) return;
         matchingRecipes.clear();
 
+        UncraftingRecipeIndex recipeIndex = UncraftingRecipeIndex.get(serverWorld);
+
         ArmorTrim trim = input.get(DataComponentTypes.TRIM);
         if (trim != null) {
-            for (RecipeEntry<SmithingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
-                if (recipeEntry.value() instanceof SmithingTrimRecipe) {
-                    matchingRecipes.add(recipeEntry);
-                    return;
-                }
+            RecipeEntry<?> trimRecipe = recipeIndex.getFirstTrimRecipe();
+            if (trimRecipe != null) {
+                matchingRecipes.add(trimRecipe);
+                return;
             }
         }
 
-        for (RecipeEntry<CraftingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.CRAFTING)) {
-            CraftingRecipe recipe = recipeEntry.value();
-            if (ItemStack.areItemsEqual(input, recipe.getResult(serverWorld.getRegistryManager()))) {
-                matchingRecipes.add(recipeEntry);
-            }
-        }
-        for (RecipeEntry<SmithingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.SMITHING)) {
-            SmithingRecipe recipe = recipeEntry.value();
-            if (ItemStack.areItemsEqual(input, recipe.getResult(serverWorld.getRegistryManager()))) {
-                matchingRecipes.add(recipeEntry);
-            }
-        }
-        for (RecipeEntry<StonecuttingRecipe> recipeEntry : serverWorld.getRecipeManager().listAllOfType(RecipeType.STONECUTTING)) {
-            StonecuttingRecipe recipe = recipeEntry.value();
-            if (ItemStack.areItemsEqual(input, recipe.getResult(serverWorld.getRegistryManager()))) {
-                matchingRecipes.add(recipeEntry);
-            }
-        }
+        recipeIndex.collectMatching(input, matchingRecipes);
     }
 
     private void fillCraftingOutput(CraftingRecipe recipe, int inputCount) {
@@ -503,9 +496,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     void clearOutputSlots() {
-        for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
-            setStack(i, ItemStack.EMPTY);
-        }
+        runBatched(() -> {
+            for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
+                setStack(i, ItemStack.EMPTY);
+            }
+        });
     }
 
     public void cycleRecipe(int delta) {
@@ -566,7 +561,27 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     @Override
     public void markDirty() {
         super.markDirty();
-        if (world != null) world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+        if (world == null) return;
+        if (batchDepth > 0) {
+            // 批量变更中：只记录脏标记，广播由 runBatched 在批末统一发出
+            batchDirty = true;
+        } else {
+            world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+        }
+    }
+
+    private void runBatched(Runnable action) {
+        batchDepth++;
+        try {
+            action.run();
+        } finally {
+            batchDepth--;
+        }
+        // 批末将累计的方块更新广播合并为一次，避免逐槽位变更时约 18 次的重复广播
+        if (batchDepth == 0 && batchDirty) {
+            batchDirty = false;
+            if (world != null) world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+        }
     }
 
     @Override

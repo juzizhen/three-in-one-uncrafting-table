@@ -33,11 +33,19 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
     public static final int SLOT_OUTPUT_START = 2;
     public static final int SLOT_OUTPUT_END = 10;
 
+    // 批量槽位变更时抑制逐次方块更新广播，批末合并为一次（可嵌套）
+    private int batchDepth = 0;
+    private boolean batchDirty = false;
+
     private final ItemStackHandler inventory = new ItemStackHandler(11) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            if (level != null && !level.isClientSide()) {
+            if (level == null || level.isClientSide()) return;
+            if (batchDepth > 0) {
+                // 批量变更中：只记录脏标记，广播由 runBatched 在批末统一发出
+                batchDirty = true;
+            } else {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
         }
@@ -70,25 +78,27 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
     }
 
     void searchRecipeToOutput(ItemStack currentInput) {
-        matchingRecipes.clear();
-        findMatchingRecipes(currentInput);
+        runBatched(() -> {
+            matchingRecipes.clear();
+            findMatchingRecipes(currentInput);
 
-        if (!matchingRecipes.isEmpty()) {
-            RecipeHolder<?> entry = matchingRecipes.get(selectedRecipeIndex);
-            Recipe<?> recipe = entry.value();
-            int inputCount = currentInput.getCount();
+            if (!matchingRecipes.isEmpty()) {
+                RecipeHolder<?> entry = matchingRecipes.get(selectedRecipeIndex);
+                Recipe<?> recipe = entry.value();
+                int inputCount = currentInput.getCount();
 
-            switch (recipe) {
-                case CraftingRecipe craftingRecipe when ModConfig.ENABLE_CRAFTING.get() ->
-                        fillCraftingOutput(craftingRecipe, inputCount);
-                case SmithingRecipe smithingRecipe when ModConfig.ENABLE_SMITHING.get() ->
-                        fillSmithingOutput(smithingRecipe, inputCount);
-                case StonecutterRecipe stonecutterRecipe when ModConfig.ENABLE_STONECUTTING.get() ->
-                        fillStonecuttingOutput(stonecutterRecipe, inputCount);
-                default -> {
+                switch (recipe) {
+                    case CraftingRecipe craftingRecipe when ModConfig.ENABLE_CRAFTING.get() ->
+                            fillCraftingOutput(craftingRecipe, inputCount);
+                    case SmithingRecipe smithingRecipe when ModConfig.ENABLE_SMITHING.get() ->
+                            fillSmithingOutput(smithingRecipe, inputCount);
+                    case StonecutterRecipe stonecutterRecipe when ModConfig.ENABLE_STONECUTTING.get() ->
+                            fillStonecuttingOutput(stonecutterRecipe, inputCount);
+                    default -> {
+                    }
                 }
             }
-        }
+        });
     }
 
     public void onInputChanged(boolean isBookInput) {
@@ -221,20 +231,22 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
 
     public void closeInventory(Player player) {
         if (level == null || level.isClientSide()) return;
-        if (outputGetCount > 0) {
-            // 已取过产物（经验已扣、输入已消耗）：归还剩余产物与剩余输入（不足以再拆解一批的残留）
-            for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
-                returnToPlayer(player, i);
+        runBatched(() -> {
+            if (outputGetCount > 0) {
+                // 已取过产物（经验已扣、输入已消耗）：归还剩余产物与剩余输入（不足以再拆解一批的残留）
+                for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
+                    returnToPlayer(player, i);
+                }
+                returnToPlayer(player, SLOT_INPUT);
+            } else {
+                // 未取过产物：输出槽仅是预览，直接清空，只归还原料，避免原料+产物同时返还造成刷物品
+                clearOutputSlots();
+                returnToPlayer(player, SLOT_INPUT);
             }
-            returnToPlayer(player, SLOT_INPUT);
-        } else {
-            // 未取过产物：输出槽仅是预览，直接清空，只归还原料，避免原料+产物同时返还造成刷物品
-            clearOutputSlots();
-            returnToPlayer(player, SLOT_INPUT);
-        }
-        // 书本原样归还（关闭时不做附魔转移）
-        returnToPlayer(player, SLOT_BOOK);
-        initialization();
+            // 书本原样归还（关闭时不做附魔转移）
+            returnToPlayer(player, SLOT_BOOK);
+            initialization();
+        });
     }
 
     private void returnToPlayer(Player player, int slot) {
@@ -248,58 +260,44 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private void updateOutputSlots() {
-        clearOutputSlots();
-        if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
+        runBatched(() -> {
+            clearOutputSlots();
+            if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
 
-        RecipeHolder<?> entry = matchingRecipes.get(selectedRecipeIndex);
-        Recipe<?> recipe = entry.value();
-        ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
-        int inputCount = input.getCount();
+            RecipeHolder<?> entry = matchingRecipes.get(selectedRecipeIndex);
+            Recipe<?> recipe = entry.value();
+            ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
+            int inputCount = input.getCount();
 
-        switch (recipe) {
-            case CraftingRecipe craftingRecipe when ModConfig.ENABLE_CRAFTING.get() ->
-                    fillCraftingOutput(craftingRecipe, inputCount);
-            case SmithingRecipe smithingRecipe when ModConfig.ENABLE_SMITHING.get() ->
-                    fillSmithingOutput(smithingRecipe, inputCount);
-            case StonecutterRecipe stonecutterRecipe when ModConfig.ENABLE_STONECUTTING.get() ->
-                    fillStonecuttingOutput(stonecutterRecipe, inputCount);
-            default -> {
+            switch (recipe) {
+                case CraftingRecipe craftingRecipe when ModConfig.ENABLE_CRAFTING.get() ->
+                        fillCraftingOutput(craftingRecipe, inputCount);
+                case SmithingRecipe smithingRecipe when ModConfig.ENABLE_SMITHING.get() ->
+                        fillSmithingOutput(smithingRecipe, inputCount);
+                case StonecutterRecipe stonecutterRecipe when ModConfig.ENABLE_STONECUTTING.get() ->
+                        fillStonecuttingOutput(stonecutterRecipe, inputCount);
+                default -> {
+                }
             }
-        }
+        });
     }
 
     private void findMatchingRecipes(ItemStack input) {
         if (!(level instanceof ServerLevel serverLevel)) return;
         matchingRecipes.clear();
 
+        UncraftingRecipeIndex recipeIndex = UncraftingRecipeIndex.get(serverLevel);
+
         ArmorTrim trim = input.get(DataComponents.TRIM);
         if (trim != null) {
-            for (RecipeHolder<SmithingRecipe> recipeEntry : serverLevel.getRecipeManager().getAllRecipesFor(RecipeType.SMITHING)) {
-                if (recipeEntry.value() instanceof SmithingTrimRecipe) {
-                    matchingRecipes.add(recipeEntry);
-                    return;
-                }
+            RecipeHolder<?> trimRecipe = recipeIndex.getFirstTrimRecipe();
+            if (trimRecipe != null) {
+                matchingRecipes.add(trimRecipe);
+                return;
             }
         }
 
-        for (RecipeHolder<CraftingRecipe> recipeEntry : serverLevel.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
-            CraftingRecipe recipe = recipeEntry.value();
-            if (input.is(recipe.getResultItem(level.registryAccess()).getItem())) {
-                matchingRecipes.add(recipeEntry);
-            }
-        }
-        for (RecipeHolder<SmithingRecipe> recipeEntry : serverLevel.getRecipeManager().getAllRecipesFor(RecipeType.SMITHING)) {
-            SmithingRecipe recipe = recipeEntry.value();
-            if (input.is(recipe.getResultItem(level.registryAccess()).getItem())) {
-                matchingRecipes.add(recipeEntry);
-            }
-        }
-        for (RecipeHolder<StonecutterRecipe> recipeEntry : serverLevel.getRecipeManager().getAllRecipesFor(RecipeType.STONECUTTING)) {
-            StonecutterRecipe recipe = recipeEntry.value();
-            if (input.is(recipe.getResultItem(level.registryAccess()).getItem())) {
-                matchingRecipes.add(recipeEntry);
-            }
-        }
+        recipeIndex.collectMatching(input, matchingRecipes);
     }
 
     private void fillCraftingOutput(CraftingRecipe recipe, int inputCount) {
@@ -516,8 +514,26 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
     }
 
     void clearOutputSlots() {
-        for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
-            inventory.setStackInSlot(i, ItemStack.EMPTY);
+        runBatched(() -> {
+            for (int i = SLOT_OUTPUT_START; i <= SLOT_OUTPUT_END; i++) {
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        });
+    }
+
+    private void runBatched(Runnable action) {
+        batchDepth++;
+        try {
+            action.run();
+        } finally {
+            batchDepth--;
+        }
+        // 批末将累计的方块更新广播合并为一次，避免逐槽位变更时约 18 次的重复广播
+        if (batchDepth == 0 && batchDirty) {
+            batchDirty = false;
+            if (level != null && !level.isClientSide()) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
         }
     }
 

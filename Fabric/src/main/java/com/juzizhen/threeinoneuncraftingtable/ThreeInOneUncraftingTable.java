@@ -8,6 +8,7 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -49,13 +50,32 @@ public class ThreeInOneUncraftingTable implements ModInitializer {
                     new ExtendedScreenHandlerType<>(UncraftingScreenHandler::new, BlockPos.PACKET_CODEC)
             );
     public static ModConfig CONFIG;
+    public static boolean isTestVersion = false;
+    public static String versionType = null;
 
     @Override
     public void onInitialize() {
         CONFIG = ModConfig.load();
 
+        String version = FabricLoader.getInstance().getModContainer(MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("");
+        versionType = detectVersionType(version);
+        isTestVersion = versionType != null;
+        if (isTestVersion) {
+            LOGGER.info("Three In One Uncrafting Table (Fabric) - {} version detected", versionType);
+        }
+
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
 
         LOGGER.info("Three In One Uncrafting Table Initialized!");
+    }
+
+    private static String detectVersionType(String version) {
+        if (version == null || version.isEmpty()) return null;
+        String lower = version.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("beta")) return "beta";
+        if (lower.contains("alpha")) return "alpha";
+        return null;
     }
 }

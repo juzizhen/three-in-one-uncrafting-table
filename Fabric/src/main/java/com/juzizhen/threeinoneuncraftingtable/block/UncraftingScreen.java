@@ -9,6 +9,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 
 public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     private static final Identifier TEXTURE = Identifier.of(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
@@ -31,6 +32,10 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     private static final int BTN_CENTER_X = (BTN_LEFT_X + BTN_LEFT_W / 2 + BTN_RIGHT_X + BTN_RIGHT_W / 2) / 2 - BTN_CENTER_W / 2;
     private static final int BTN_CENTER_Y = 73;
 
+    private static final long WARNING_DURATION_MS = 3000;
+    private static boolean warningShownThisSession = false;
+    private long openTime = -1;
+
     public UncraftingScreen(UncraftingScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
         this.backgroundWidth = 176;
@@ -38,10 +43,25 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     }
 
     @Override
+    protected void init() {
+        super.init();
+        openTime = Util.getMeasuringTimeMs();
+    }
+
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context, mouseX, mouseY, delta);
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
+
+        if (ThreeInOneUncraftingTable.isTestVersion && !warningShownThisSession && openTime >= 0) {
+            long elapsed = Util.getMeasuringTimeMs() - openTime;
+            if (elapsed < WARNING_DURATION_MS) {
+                renderTestVersionWarning(context, elapsed);
+            } else {
+                warningShownThisSession = true;
+            }
+        }
 
         if (mouseX >= this.x + BTN_LEFT_X && mouseX < this.x + BTN_LEFT_X + BTN_LEFT_W &&
                 mouseY >= this.y + BTN_LEFT_Y && mouseY < this.y + BTN_LEFT_Y + BTN_LEFT_H) {
@@ -149,5 +169,37 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void renderTestVersionWarning(DrawContext context, long elapsedMs) {
+        float alpha = 1.0F;
+        if (elapsedMs > WARNING_DURATION_MS - 1000) {
+            alpha = (WARNING_DURATION_MS - elapsedMs) / 1000.0F;
+            alpha = Math.clamp(alpha, 0.0F, 1.0F);
+        }
+
+        int bgColor = ((int) (alpha * 200) << 24) | 0x00CC4400;
+        int bannerX = this.x;
+        int bannerY = this.y - 24;
+        int bannerW = this.backgroundWidth;
+        int bannerH = 22;
+
+        context.fill(bannerX, bannerY, bannerX + bannerW, bannerY + bannerH, bgColor);
+
+        int textAlpha = (int) (alpha * 255);
+
+        if (textAlpha >= 4) {
+            Text line1 = Text.translatable(
+                    "gui." + ThreeInOneUncraftingTable.MOD_ID + ".test_version_warning",
+                    ThreeInOneUncraftingTable.versionType);
+            Text line2 = Text.translatable(
+                    "gui." + ThreeInOneUncraftingTable.MOD_ID + ".report_issues");
+
+            int centerX = this.x + this.backgroundWidth / 2;
+            int textColor = (textAlpha << 24) | 0x00FFFFFF;
+
+            context.drawCenteredTextWithShadow(this.textRenderer, line1, centerX, bannerY + 3, textColor);
+            context.drawCenteredTextWithShadow(this.textRenderer, line2, centerX, bannerY + 12, textColor);
+        }
     }
 }
