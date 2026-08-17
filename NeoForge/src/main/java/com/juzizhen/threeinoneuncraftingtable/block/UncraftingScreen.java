@@ -32,7 +32,7 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
     private static final int BTN_CENTER_X = (BTN_LEFT_X + BTN_LEFT_W / 2 + BTN_RIGHT_X + BTN_RIGHT_W / 2) / 2 - BTN_CENTER_W / 2;
     private static final int BTN_CENTER_Y = 73;
 
-    private static final long WARNING_DURATION_MS = 5000;
+    private static final long WARNING_DURATION_MS = 3000;
     private static boolean warningShownThisSession = false;
     private long openTime = -1;
 
@@ -177,6 +177,10 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
             alpha = Math.clamp(alpha, 0.0F, 1.0F);
         }
 
+        if (alpha <= 0.0F) {
+            return;
+        }
+
         int bgColor = ((int) (alpha * 200) << 24) | 0x00CC4400;
         int bannerX = this.leftPos;
         int bannerY = this.topPos - 24;
@@ -185,17 +189,20 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
 
         guiGraphics.fill(bannerX, bannerY, bannerX + bannerW, bannerY + bannerH, bgColor);
 
-        Component line1 = Component.translatable(
-                "gui." + ThreeInOneUncraftingTable.MOD_ID + ".test_version_warning",
-                ThreeInOneUncraftingTable.versionType);
-        Component line2 = Component.translatable(
-                "gui." + ThreeInOneUncraftingTable.MOD_ID + ".report_issues");
-
-        int centerX = this.leftPos + this.imageWidth / 2;
         int textAlpha = (int) (alpha * 255);
-        int textColor = (textAlpha << 24) | 0x00FFFFFF;
 
-        guiGraphics.drawCenteredString(this.font, line1, centerX, bannerY + 3, textColor);
-        guiGraphics.drawCenteredString(this.font, line2, centerX, bannerY + 12, textColor);
+        if (textAlpha >= 4) {
+            int textColor = (textAlpha << 24) | 0x00FFFFFF;
+
+            Component line1 = Component.translatable(
+                    "gui." + ThreeInOneUncraftingTable.MOD_ID + ".test_version_warning",
+                    ThreeInOneUncraftingTable.versionType);
+            Component line2 = Component.translatable(
+                    "gui." + ThreeInOneUncraftingTable.MOD_ID + ".report_issues");
+
+            int centerX = this.leftPos + this.imageWidth / 2;
+            guiGraphics.drawCenteredString(this.font, line1, centerX, bannerY + 3, textColor);
+            guiGraphics.drawCenteredString(this.font, line2, centerX, bannerY + 12, textColor);
+        }
     }
 }

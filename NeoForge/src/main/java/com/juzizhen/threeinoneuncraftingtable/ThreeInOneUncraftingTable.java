@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig.Type;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -29,7 +30,6 @@ import org.slf4j.Logger;
 public class ThreeInOneUncraftingTable {
     public static final String MOD_ID = "three_in_one_uncrafting_table";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static ModConfig CONFIG;
     public static boolean isTestVersion = false;
     public static String versionType = null;
 
@@ -64,7 +64,8 @@ public class ThreeInOneUncraftingTable {
                     }));
 
     public ThreeInOneUncraftingTable(IEventBus modEventBus, ModContainer modContainer) {
-        CONFIG = ModConfig.load();
+        // 注册官方标准 TOML 配置（config/three_in_one_uncrafting_table-common.toml）
+        modContainer.registerConfig(Type.COMMON, ModConfig.SPEC);
 
         String version = modContainer.getModInfo().getVersion().toString();
         versionType = detectVersionType(version);

@@ -1,6 +1,7 @@
 package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
+import com.juzizhen.threeinoneuncraftingtable.config.ModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -78,11 +79,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             int inputCount = currentInput.getCount();
 
             switch (recipe) {
-                case CraftingRecipe craftingRecipe when ThreeInOneUncraftingTable.CONFIG.enableCrafting ->
+                case CraftingRecipe craftingRecipe when ModConfig.ENABLE_CRAFTING.get() ->
                         fillCraftingOutput(craftingRecipe, inputCount);
-                case SmithingRecipe smithingRecipe when ThreeInOneUncraftingTable.CONFIG.enableSmithing ->
+                case SmithingRecipe smithingRecipe when ModConfig.ENABLE_SMITHING.get() ->
                         fillSmithingOutput(smithingRecipe, inputCount);
-                case StonecutterRecipe stonecutterRecipe when ThreeInOneUncraftingTable.CONFIG.enableStonecutting ->
+                case StonecutterRecipe stonecutterRecipe when ModConfig.ENABLE_STONECUTTING.get() ->
                         fillStonecuttingOutput(stonecutterRecipe, inputCount);
                 default -> {
                 }
@@ -145,7 +146,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
                     experienceCost = 0;
                 }
                 if (currentInput.isEnchanted() && !inventory.getStackInSlot(SLOT_BOOK).isEmpty()
-                        && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
+                        && ModConfig.ENABLE_ENCHANTMENT_TRANSFER.get()) {
                     ItemStack book = inventory.getStackInSlot(SLOT_BOOK);
                     if (book.getItem() == Items.BOOK) {
                         ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
@@ -256,11 +257,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         int inputCount = input.getCount();
 
         switch (recipe) {
-            case CraftingRecipe craftingRecipe when ThreeInOneUncraftingTable.CONFIG.enableCrafting ->
+            case CraftingRecipe craftingRecipe when ModConfig.ENABLE_CRAFTING.get() ->
                     fillCraftingOutput(craftingRecipe, inputCount);
-            case SmithingRecipe smithingRecipe when ThreeInOneUncraftingTable.CONFIG.enableSmithing ->
+            case SmithingRecipe smithingRecipe when ModConfig.ENABLE_SMITHING.get() ->
                     fillSmithingOutput(smithingRecipe, inputCount);
-            case StonecutterRecipe stonecutterRecipe when ThreeInOneUncraftingTable.CONFIG.enableStonecutting ->
+            case StonecutterRecipe stonecutterRecipe when ModConfig.ENABLE_STONECUTTING.get() ->
                     fillStonecuttingOutput(stonecutterRecipe, inputCount);
             default -> {
             }
@@ -303,8 +304,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
 
     private void fillCraftingOutput(CraftingRecipe recipe, int inputCount) {
         if (level == null) return;
-        int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
-        float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
+        int baseXpCost = ModConfig.BASE_XP_COST.get();
+        float xpCostMultiplier = ModConfig.XP_COST_MULTIPLIER.get().floatValue();
         List<Ingredient> ingredients = recipe.getIngredients();
         ItemStack recipeOutput = recipe.getResultItem(level.registryAccess());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
@@ -320,7 +321,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.isEnchanted() && !inventory.getStackInSlot(SLOT_BOOK).isEmpty()
-                && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
+                && ModConfig.ENABLE_ENCHANTMENT_TRANSFER.get()) {
             ItemEnchantments enchantments = input.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
             for (Holder<net.minecraft.world.item.enchantment.Enchantment> entry : enchantments.keySet()) {
                 int lvl = enchantments.getLevel(entry);
@@ -378,8 +379,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
 
     private void fillSmithingOutput(Recipe<?> recipe, int inputCount) {
         if (level == null) return;
-        int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
-        float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
+        int baseXpCost = ModConfig.BASE_XP_COST.get();
+        float xpCostMultiplier = ModConfig.XP_COST_MULTIPLIER.get().floatValue();
 
         ItemStack inputStack = inventory.getStackInSlot(SLOT_INPUT);
         if (inputStack.isEmpty()) return;
@@ -400,7 +401,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             baseStack.remove(DataComponents.TRIM);
             ItemStack bookSlot = inventory.getStackInSlot(SLOT_BOOK);
             if (!bookSlot.isEmpty() && bookSlot.getItem() == Items.BOOK
-                    && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
+                    && ModConfig.ENABLE_ENCHANTMENT_TRANSFER.get()) {
                 baseStack.remove(DataComponents.ENCHANTMENTS);
             }
             inventory.setStackInSlot(SLOT_OUTPUT_START + 1, baseStack);
@@ -428,7 +429,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.isEnchanted() && !inventory.getStackInSlot(SLOT_BOOK).isEmpty()
-                && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
+                && ModConfig.ENABLE_ENCHANTMENT_TRANSFER.get()) {
             ItemEnchantments enchantments = input.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
             for (Holder<net.minecraft.world.item.enchantment.Enchantment> entry : enchantments.keySet()) {
                 int lvl = enchantments.getLevel(entry);
@@ -472,8 +473,8 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
 
     private void fillStonecuttingOutput(StonecutterRecipe recipe, int inputCount) {
         if (level == null) return;
-        int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
-        float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
+        int baseXpCost = ModConfig.BASE_XP_COST.get();
+        float xpCostMultiplier = ModConfig.XP_COST_MULTIPLIER.get().floatValue();
         ItemStack recipeOutput = recipe.getResultItem(level.registryAccess());
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
@@ -488,7 +489,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             cost += (int) Math.ceil(cost * lostRatio * 1.25);
         }
         if (input.isEnchanted() && !inventory.getStackInSlot(SLOT_BOOK).isEmpty()
-                && ThreeInOneUncraftingTable.CONFIG.enableEnchantmentTransfer) {
+                && ModConfig.ENABLE_ENCHANTMENT_TRANSFER.get()) {
             ItemEnchantments enchantments = input.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
             for (Holder<net.minecraft.world.item.enchantment.Enchantment> entry : enchantments.keySet()) {
                 int lvl = enchantments.getLevel(entry);
