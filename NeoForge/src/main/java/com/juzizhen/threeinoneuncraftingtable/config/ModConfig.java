@@ -2,6 +2,8 @@ package com.juzizhen.threeinoneuncraftingtable.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.List;
+
 /**
  * NeoForge 官方标准配置（ModConfigSpec + TOML）。
  * 生成的配置文件为 config/three_in_one_uncrafting_table-common.toml，
@@ -18,6 +20,7 @@ public class ModConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_ENCHANTMENT_TRANSFER;
     public static final ModConfigSpec.BooleanValue ENABLE_KUBEJS_RECIPES;
     public static final ModConfigSpec.BooleanValue ENABLE_CRAFTTWEAKER_RECIPES;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> BLACKLIST_ITEMS;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -58,6 +61,12 @@ public class ModConfig {
                 .comment("是否允许拆解 CraftTweaker 脚本添加的配方（配方 ID 命名空间为 crafttweaker）",
                         "关闭后仅使用原版与其他模组原生配方进行拆解")
                 .define("enableCraftTweakerRecipes", true);
+
+        BLACKLIST_ITEMS = builder
+                .comment("拆解黑名单物品列表：列表中的物品禁止被拆解",
+                        "格式为完整物品 ID（如 minecraft:diamond_sword）",
+                        "放入输入槽后不匹配任何配方、不显示输出，关闭 GUI 时原样归还")
+                .defineListAllowEmpty("blacklistItems", List.of(), String::new, element -> element instanceof String);
 
         SPEC = builder.build();
     }

@@ -5,6 +5,7 @@ import com.juzizhen.threeinoneuncraftingtable.config.ModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
@@ -252,6 +253,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         if (!(level instanceof ServerLevel serverLevel)) return;
         matchingRecipes.clear();
 
+        // 黑名单物品禁止拆解：不匹配任何配方（含纹饰路径），切换配方按钮也无任何可选项
+        if (isItemBlacklisted(input)) return;
+
         UncraftingRecipeIndex recipeIndex = UncraftingRecipeIndex.get(serverLevel);
 
         ArmorTrim trim = input.get(DataComponents.TRIM);
@@ -264,6 +268,17 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         }
 
         recipeIndex.collectMatching(input, matchingRecipes);
+    }
+
+    /** 判断物品是否在拆解黑名单中（按物品注册表 ID 匹配，如 minecraft:diamond_sword） */
+    private static boolean isItemBlacklisted(ItemStack input) {
+        List<? extends String> blacklist = ModConfig.BLACKLIST_ITEMS.get();
+        if (blacklist.isEmpty()) return false;
+        String itemId = BuiltInRegistries.ITEM.getKey(input.getItem()).toString();
+        for (String blacklisted : blacklist) {
+            if (itemId.equalsIgnoreCase(blacklisted)) return true;
+        }
+        return false;
     }
 
     /** 按当前选中的配方索引填充输出槽（尊重配置开关） */

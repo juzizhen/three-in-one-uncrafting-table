@@ -5,6 +5,8 @@ import com.google.gson.GsonBuilder;
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ModConfig {
     private static final File CONFIG_FILE = new File("config/three_in_one_uncrafting_table.json");
@@ -19,6 +21,9 @@ public class ModConfig {
     // 脚本配方兼容开关：开启时对应 mod 添加的配方参与拆解，关闭时仅使用原版与其他 mod 原生配方
     public boolean enableKubeJSRecipes = true;
     public boolean enableCraftTweakerRecipes = true;
+    // 拆解黑名单：列表中的物品禁止被拆解，格式为完整物品 ID（如 "minecraft:diamond_sword"），
+    // 放入输入槽后不匹配任何配方、不显示输出，关闭 GUI 时原样归还
+    public List<String> blacklistItems = new ArrayList<>();
 
     public static ModConfig load() {
         ModConfig config = null;
