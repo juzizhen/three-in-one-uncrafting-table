@@ -3,9 +3,9 @@ package com.juzizhen.threeinoneuncraftingtable.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * NeoForge official standard config (ModConfigSpec + TOML).
- * The generated config file is config/three_in_one_uncrafting_table-common.toml,
- * and the comment content below is automatically written into the config file by FML.
+ * NeoForge 官方标准配置（ModConfigSpec + TOML）。
+ * 生成的配置文件为 config/three_in_one_uncrafting_table-common.toml，
+ * 下方 comment 内容会由 FML 自动写入配置文件作为注释。
  */
 public class ModConfig {
     public static final ModConfigSpec SPEC;
@@ -21,30 +21,30 @@ public class ModConfig {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         BASE_XP_COST = builder
-                .comment("Base experience level cost for uncrafting",
-                        "Crafting recipe: baseXpCost × count × 0.8 − count; Smithing recipe: baseXpCost × count × 1.5; Stonecutting recipe: baseXpCost × count × 0.2",
-                        "Durability loss and enchantments (when enchantment transfer is enabled and a book is inserted) add extra cost")
+                .comment("拆解的基础经验等级消耗",
+                        "合成配方：baseXpCost × 数量 × 0.8 − 数量；锻造配方：baseXpCost × 数量 × 1.5；切石配方：baseXpCost × 数量 × 0.2",
+                        "耐久损耗与附魔（启用附魔转移且放入书本时）会产生额外消耗")
                 .defineInRange("baseXpCost", 5, 0, 1000);
 
         XP_COST_MULTIPLIER = builder
-                .comment("Global multiplier for experience cost, 1.0 means the original cost without any modifier")
+                .comment("经验消耗的全局倍率，1.0 为默认不加成的原始消耗")
                 .defineInRange("xpCostMultiplier", 1.0D, 0.0D, 100.0D);
 
         ENABLE_CRAFTING = builder
-                .comment("Whether to allow uncrafting crafting table recipes (shaped/shapeless)")
+                .comment("是否允许拆解工作台合成配方（有序/无序合成）")
                 .define("enableCrafting", true);
 
         ENABLE_SMITHING = builder
-                .comment("Whether to allow uncrafting smithing table recipes (including uncrafting armor with trims)")
+                .comment("是否允许拆解锻造台配方（含带纹饰装备的拆解）")
                 .define("enableSmithing", true);
 
         ENABLE_STONECUTTING = builder
-                .comment("Whether to allow uncrafting stonecutter recipes")
+                .comment("是否允许拆解切石机配方")
                 .define("enableStonecutting", true);
 
         ENABLE_ENCHANTMENT_TRANSFER = builder
-                .comment("Whether to allow enchantment transfer: when a book is inserted, uncrafting an enchanted item transfers its enchantments to an enchanted book, with extra experience cost",
-                        "When disabled, enchantments are simply lost on uncrafting, and no enchantment-related extra experience cost is applied")
+                .comment("是否允许附魔转移：放入书本时，拆解带附魔的物品会将附魔转移到附魔书上，并产生额外经验消耗",
+                        "关闭后拆解时附魔将直接丢失，也不再产生附魔相关的额外经验消耗")
                 .define("enableEnchantmentTransfer", true);
 
         SPEC = builder.build();

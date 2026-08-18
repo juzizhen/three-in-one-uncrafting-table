@@ -17,7 +17,7 @@ public class UncraftingScreenHandler extends ScreenHandler {
     final UncraftingTableBlockEntity blockEntity;
     private final Inventory inventory;
 
-    // Client-side constructor: receives BlockPos from ExtendedScreenHandlerType
+    // 客户端构造函数：从 ExtendedScreenHandlerType 接收 BlockPos 并查找对应的方块实体
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, BlockPos pos) {
         this(syncId, playerInventory, getBlockEntity(playerInventory, pos));
     }
@@ -30,7 +30,7 @@ public class UncraftingScreenHandler extends ScreenHandler {
         return uncraftingTable;
     }
 
-    // Server-side constructor
+    // 服务端构造函数
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER, syncId);
         if (!(inventory instanceof UncraftingTableBlockEntity uncraftingTable)) {
