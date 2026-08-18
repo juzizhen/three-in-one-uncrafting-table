@@ -26,46 +26,46 @@ public class ModConfig {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         BASE_XP_COST = builder
-                .comment("拆解的基础经验等级消耗",
-                        "合成配方：baseXpCost × 数量 × 0.8 − 数量；锻造配方：baseXpCost × 数量 × 1.5；切石配方：baseXpCost × 数量 × 0.2",
-                        "耐久损耗与附魔（启用附魔转移且放入书本时）会产生额外消耗")
+                .comment("Base experience level cost for uncrafting",
+                        "Crafting recipe: baseXpCost x count x 0.8 - count; Smithing recipe: baseXpCost x count x 1.5; Stonecutting recipe: baseXpCost x count x 0.2",
+                        "Durability loss and enchantments (when enchantment transfer is enabled and a book is inserted) add extra cost")
                 .defineInRange("baseXpCost", 5, 0, 1000);
 
         XP_COST_MULTIPLIER = builder
-                .comment("经验消耗的全局倍率，1.0 为默认不加成的原始消耗")
+                .comment("Global multiplier for experience cost, 1.0 means the original cost without any modifier")
                 .defineInRange("xpCostMultiplier", 1.0D, 0.0D, 100.0D);
 
         ENABLE_CRAFTING = builder
-                .comment("是否允许拆解工作台合成配方（有序/无序合成）")
+                .comment("Whether to allow uncrafting crafting table recipes (shaped/shapeless)")
                 .define("enableCrafting", true);
 
         ENABLE_SMITHING = builder
-                .comment("是否允许拆解锻造台配方（含带纹饰装备的拆解）")
+                .comment("Whether to allow uncrafting smithing table recipes (including uncrafting armor with trims)")
                 .define("enableSmithing", true);
 
         ENABLE_STONECUTTING = builder
-                .comment("是否允许拆解切石机配方")
+                .comment("Whether to allow uncrafting stonecutter recipes")
                 .define("enableStonecutting", true);
 
         ENABLE_ENCHANTMENT_TRANSFER = builder
-                .comment("是否允许附魔转移：放入书本时，拆解带附魔的物品会将附魔转移到附魔书上，并产生额外经验消耗",
-                        "关闭后拆解时附魔将直接丢失，也不再产生附魔相关的额外经验消耗")
+                .comment("Whether to allow enchantment transfer: when a book is inserted, uncrafting an enchanted item transfers its enchantments to an enchanted book, with extra experience cost",
+                        "When disabled, enchantments are simply lost on uncrafting, and no enchantment-related extra experience cost is applied")
                 .define("enableEnchantmentTransfer", true);
 
         ENABLE_KUBEJS_RECIPES = builder
-                .comment("是否允许拆解 KubeJS 脚本添加的配方（配方 ID 命名空间为 kubejs）",
-                        "关闭后仅使用原版与其他模组原生配方进行拆解")
+                .comment("Whether to allow uncrafting recipes added by KubeJS scripts (recipe ID namespace: kubejs)",
+                        "When disabled, only vanilla and other mods' native recipes are used for uncrafting")
                 .define("enableKubeJSRecipes", true);
 
         ENABLE_CRAFTTWEAKER_RECIPES = builder
-                .comment("是否允许拆解 CraftTweaker 脚本添加的配方（配方 ID 命名空间为 crafttweaker）",
-                        "关闭后仅使用原版与其他模组原生配方进行拆解")
+                .comment("Whether to allow uncrafting recipes added by CraftTweaker scripts (recipe ID namespace: crafttweaker)",
+                        "When disabled, only vanilla and other mods' native recipes are used for uncrafting")
                 .define("enableCraftTweakerRecipes", true);
 
         BLACKLIST_ITEMS = builder
-                .comment("拆解黑名单物品列表：列表中的物品禁止被拆解",
-                        "格式为完整物品 ID（如 minecraft:diamond_sword）",
-                        "放入输入槽后不匹配任何配方、不显示输出，关闭 GUI 时原样归还")
+                .comment("Uncrafting blacklist: items in this list cannot be uncrafted",
+                        "Format is the full item ID (e.g. minecraft:diamond_sword)",
+                        "When placed in the input slot, no recipe will match and no output will be shown; the item is returned as-is when the GUI is closed")
                 .defineListAllowEmpty("blacklistItems", List.of(), String::new, element -> element instanceof String);
 
         SPEC = builder.build();
