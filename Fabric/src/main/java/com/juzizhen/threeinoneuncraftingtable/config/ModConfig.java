@@ -10,17 +10,11 @@ public class ModConfig {
     private static final File CONFIG_FILE = new File("config/three_in_one_uncrafting_table.json");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    @SuppressWarnings("unused")
     public int baseXpCost = 5;
-    @SuppressWarnings("unused")
     public float xpCostMultiplier = 1.0F;
-    @SuppressWarnings("unused")
     public boolean enableCrafting = true;
-    @SuppressWarnings("unused")
     public boolean enableSmithing = true;
-    @SuppressWarnings("unused")
     public boolean enableStonecutting = true;
-    @SuppressWarnings("unused")
     public boolean enableEnchantmentTransfer = true;
 
     public static ModConfig load() {

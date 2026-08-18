@@ -10,6 +10,7 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmithingRecipe;
 import net.minecraft.world.item.crafting.SmithingTrimRecipe;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,7 +67,8 @@ public class UncraftingRecipeIndex {
         }
     }
 
-    public RecipeHolder<?> getFirstTrimRecipe() {
+    /** 首个锻造纹饰配方；未找到时为 null（包级 @MethodsReturnNonnullByDefault 下需显式标注） */
+    public @Nullable RecipeHolder<?> getFirstTrimRecipe() {
         return firstTrimRecipe;
     }
 
