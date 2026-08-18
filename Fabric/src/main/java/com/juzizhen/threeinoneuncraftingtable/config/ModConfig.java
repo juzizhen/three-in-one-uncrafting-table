@@ -16,6 +16,9 @@ public class ModConfig {
     public boolean enableSmithing = true;
     public boolean enableStonecutting = true;
     public boolean enableEnchantmentTransfer = true;
+    // 脚本配方兼容开关：开启时对应 mod 添加的配方参与拆解，关闭时仅使用原版与其他 mod 原生配方
+    public boolean enableKubeJSRecipes = true;
+    public boolean enableCraftTweakerRecipes = true;
 
     public static ModConfig load() {
         ModConfig config = null;

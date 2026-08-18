@@ -16,6 +16,8 @@ public class ModConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_SMITHING;
     public static final ModConfigSpec.BooleanValue ENABLE_STONECUTTING;
     public static final ModConfigSpec.BooleanValue ENABLE_ENCHANTMENT_TRANSFER;
+    public static final ModConfigSpec.BooleanValue ENABLE_KUBEJS_RECIPES;
+    public static final ModConfigSpec.BooleanValue ENABLE_CRAFTTWEAKER_RECIPES;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -46,6 +48,16 @@ public class ModConfig {
                 .comment("是否允许附魔转移：放入书本时，拆解带附魔的物品会将附魔转移到附魔书上，并产生额外经验消耗",
                         "关闭后拆解时附魔将直接丢失，也不再产生附魔相关的额外经验消耗")
                 .define("enableEnchantmentTransfer", true);
+
+        ENABLE_KUBEJS_RECIPES = builder
+                .comment("是否允许拆解 KubeJS 脚本添加的配方（配方 ID 命名空间为 kubejs）",
+                        "关闭后仅使用原版与其他模组原生配方进行拆解")
+                .define("enableKubeJSRecipes", true);
+
+        ENABLE_CRAFTTWEAKER_RECIPES = builder
+                .comment("是否允许拆解 CraftTweaker 脚本添加的配方（配方 ID 命名空间为 crafttweaker）",
+                        "关闭后仅使用原版与其他模组原生配方进行拆解")
+                .define("enableCraftTweakerRecipes", true);
 
         SPEC = builder.build();
     }

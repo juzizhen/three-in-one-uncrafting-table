@@ -1,5 +1,6 @@
 package com.juzizhen.threeinoneuncraftingtable.block;
 
+import com.juzizhen.threeinoneuncraftingtable.config.ModConfig;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
@@ -25,11 +26,15 @@ import java.util.Map;
  * 配方管理器（RecipeManager）在每次数据包重载时会被服务器重建，用其实例身份做缓存失效。
  */
 public class UncraftingRecipeIndex {
+    // 脚本配方模组添加配方的默认命名空间；适配其他同款模组时在此追加命名空间与对应开关即可
+    private static final String KUBEJS_NAMESPACE = "kubejs";
+    private static final String CRAFTTWEAKER_NAMESPACE = "crafttweaker";
+
     private static RecipeManager cachedRecipeManager;
     private static UncraftingRecipeIndex cachedIndex;
 
     private final Map<Item, List<RecipeHolder<?>>> byResultItem = new HashMap<>();
-    private RecipeHolder<?> firstTrimRecipe;
+    private final List<RecipeHolder<?>> trimRecipes = new ArrayList<>();
 
     public static UncraftingRecipeIndex get(ServerLevel level) {
         RecipeManager recipeManager = level.getRecipeManager();
@@ -44,11 +49,10 @@ public class UncraftingRecipeIndex {
         UncraftingRecipeIndex index = new UncraftingRecipeIndex();
         RegistryAccess registryAccess = level.registryAccess();
 
-        // 保留原逻辑：带纹饰的物品只匹配迭代顺序中的第一个锻造纹饰配方
+        // 带纹饰的物品只匹配锻造纹饰配方：收集全部纹饰配方，匹配时返回第一个被开关允许的
         for (RecipeHolder<SmithingRecipe> holder : recipeManager.getAllRecipesFor(RecipeType.SMITHING)) {
             if (holder.value() instanceof SmithingTrimRecipe) {
-                index.firstTrimRecipe = holder;
-                break;
+                index.trimRecipes.add(holder);
             }
         }
 
@@ -67,16 +71,34 @@ public class UncraftingRecipeIndex {
         }
     }
 
-    /** 首个锻造纹饰配方；未找到时为 null（包级 @MethodsReturnNonnullByDefault 下需显式标注） */
+    /** 首个被开关允许的锻造纹饰配方；无配方或全部被排除时返回 null（包级 @MethodsReturnNonnullByDefault 下需显式标注） */
     public @Nullable RecipeHolder<?> getFirstTrimRecipe() {
-        return firstTrimRecipe;
+        for (RecipeHolder<?> holder : trimRecipes) {
+            if (isScriptRecipeAllowed(holder.id().getNamespace())) {
+                return holder;
+            }
+        }
+        return null;
     }
 
-    /** 保留原 input.is(产物物品) 匹配语义（仅比较物品类型） */
+    /** 保留原 input.is(产物物品) 匹配语义（仅比较物品类型）；被开关排除的脚本配方不参与 */
     public void collectMatching(ItemStack input, List<RecipeHolder<?>> out) {
         List<RecipeHolder<?>> candidates = byResultItem.get(input.getItem());
-        if (candidates != null) {
-            out.addAll(candidates);
+        if (candidates == null) return;
+        for (RecipeHolder<?> holder : candidates) {
+            if (!isScriptRecipeAllowed(holder.id().getNamespace())) continue;
+            out.add(holder);
         }
+    }
+
+    /** 脚本配方兼容过滤：对应命名空间的配方仅在配置开关开启时参与拆解，其余配方（原版/其他模组原生）不受影响 */
+    private static boolean isScriptRecipeAllowed(String namespace) {
+        if (KUBEJS_NAMESPACE.equals(namespace)) {
+            return ModConfig.ENABLE_KUBEJS_RECIPES.get();
+        }
+        if (CRAFTTWEAKER_NAMESPACE.equals(namespace)) {
+            return ModConfig.ENABLE_CRAFTTWEAKER_RECIPES.get();
+        }
+        return true;
     }
 }
