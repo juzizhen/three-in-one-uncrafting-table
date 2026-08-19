@@ -1,7 +1,7 @@
 package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
-import com.juzizhen.threeinoneuncraftingtable.mixin.SmithingTransformRecipeAccessor;
+import com.juzizhen.threeinoneuncraftingtable.mixin.*;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -15,8 +15,7 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.item.trim.ArmorTrim;
-import net.minecraft.item.trim.ArmorTrimMaterial;
+import net.minecraft.item.equipment.trim.ArmorTrim;
 import net.minecraft.recipe.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -29,6 +28,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos>, Inventory {
 
@@ -50,6 +50,42 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
     public UncraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY, pos, state);
+    }
+
+    /**
+     * 判断物品是否在拆解黑名单中（按物品注册表 ID 匹配，如 minecraft:diamond_sword）
+     */
+    private static boolean isItemBlacklisted(ItemStack input) {
+        List<String> blacklist = ThreeInOneUncraftingTable.CONFIG.blacklistItems;
+        if (blacklist == null || blacklist.isEmpty()) return false;
+        String itemId = Registries.ITEM.getId(input.getItem()).toString();
+        for (String blacklisted : blacklist) {
+            if (itemId.equalsIgnoreCase(blacklisted)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 1.21.11：Ingredient.getMatchingStacks() 已移除，改由 getMatchingItems() 的物品注册项构造堆（默认数量 1，与原语义一致）
+     */
+    @SuppressWarnings("deprecation") // getMatchingItems() 在 1.21.11 是构造匹配堆的唯一可用途径，无未弃用替代
+    private static ItemStack[] getMatchingStacks(Ingredient ingredient) {
+        return ingredient.getMatchingItems()
+                .map(entry -> new ItemStack(entry.value()))
+                .toArray(ItemStack[]::new);
+    }
+
+    /**
+     * 1.21.11：锻造配方结果改由 TransmuteRecipeResult 构造，等价于旧版 getResult 的堆（物品 + 数量 + 组件）
+     */
+    private static ItemStack getSmithingResult(SmithingRecipe recipe) {
+        if (!(recipe instanceof SmithingTransformRecipe transform)) return ItemStack.EMPTY;
+        TransmuteRecipeResult result = ((SmithingTransformRecipeAccessor) transform).getResult();
+        ItemStack stack = new ItemStack(result.itemEntry().value(), result.count());
+        if (!result.components().isEmpty()) {
+            stack.applyChanges(result.components());
+        }
+        return stack;
     }
 
     public boolean hasOutputItems() {
@@ -75,7 +111,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     public void onInputChanged(boolean isBookInput) {
-        if (world == null || world.isClient) return;
+        if (world == null || world.isClient()) return;
         ItemStack currentInput = getStack(SLOT_INPUT);
         boolean hasOutputItems = hasOutputItems();
 
@@ -115,7 +151,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     public void onOutputChanged(ItemStack stack, PlayerEntity player) {
-        if (world == null || world.isClient) return;
+        if (world == null || world.isClient()) return;
         // 空堆不触发任何消耗/补货逻辑，避免在输入被消耗前错误地重新填充输出槽（刷物品）
         if (stack.isEmpty()) return;
         boolean hasOutputItems;
@@ -201,7 +237,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
     }
 
     public void closeInventory(PlayerEntity player) {
-        if (world == null || world.isClient) return;
+        if (world == null || world.isClient()) return;
         runBatched(() -> {
             if (outputGetCount > 0) {
                 // 已取过产物（经验已扣、输入已消耗）：归还剩余产物与剩余输入（不足以再拆解一批的残留）
@@ -258,18 +294,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         recipeIndex.collectMatching(input, matchingRecipes);
     }
 
-    /** 判断物品是否在拆解黑名单中（按物品注册表 ID 匹配，如 minecraft:diamond_sword） */
-    private static boolean isItemBlacklisted(ItemStack input) {
-        List<String> blacklist = ThreeInOneUncraftingTable.CONFIG.blacklistItems;
-        if (blacklist == null || blacklist.isEmpty()) return false;
-        String itemId = Registries.ITEM.getId(input.getItem()).toString();
-        for (String blacklisted : blacklist) {
-            if (itemId.equalsIgnoreCase(blacklisted)) return true;
-        }
-        return false;
-    }
-
-    /** 按当前选中的配方索引填充输出槽（尊重配置开关） */
+    /**
+     * 按当前选中的配方索引填充输出槽（尊重配置开关）
+     */
     private void fillSelectedRecipe(ItemStack input) {
         if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
 
@@ -285,7 +312,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         }
     }
 
-    /** 耐久损耗加价（损伤比例越高加价越多）；启用附魔转移且放入书本时按附魔等级追加经验 */
+    /**
+     * 耐久损耗加价（损伤比例越高加价越多）；启用附魔转移且放入书本时按附魔等级追加经验
+     */
     private int applyDamageAndEnchantmentCost(int cost, float xpCostMultiplier) {
         ItemStack input = getStack(SLOT_INPUT);
         if (input.isDamageable()) {
@@ -303,7 +332,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         return cost;
     }
 
-    /** 将原料的第一个匹配堆按倍数放入输出槽，无匹配时清空该槽 */
+    /**
+     * 将原料的第一个匹配堆按倍数放入输出槽，无匹配时清空该槽
+     */
     private void fillOutputSlot(int slotIndex, ItemStack[] matching, int multiplier) {
         if (matching.length > 0) {
             ItemStack stack = matching[0].copy();
@@ -318,8 +349,15 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         if (world == null) return;
         int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
         float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
-        List<Ingredient> ingredients = recipe.getIngredients();
-        ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
+        ItemStack recipeOutput;
+        if (recipe instanceof ShapedRecipe shaped) {
+            recipeOutput = ((ShapedResultAccessor) shaped).getResult().copy();
+        } else if (recipe instanceof ShapelessRecipe shapeless) {
+            recipeOutput = ((ShapelessResultAccessor) shapeless).getResult().copy();
+        } else {
+            // 特殊合成配方（染色等）无固定产物，与原版 getResult 返回空堆一致
+            recipeOutput = ItemStack.EMPTY;
+        }
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -329,6 +367,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         inputConsumed = multiplier * recipeOutputCount;
 
         if (recipe instanceof ShapedRecipe shaped) {
+            List<Optional<Ingredient>> ingredients = shaped.getIngredients();
             int width = shaped.getWidth();
             int height = shaped.getHeight();
 
@@ -337,18 +376,21 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                     int ingredientIndex = row * width + col;
                     if (ingredientIndex >= ingredients.size()) continue;
 
-                    Ingredient ing = ingredients.get(ingredientIndex);
-                    fillOutputSlot(SLOT_OUTPUT_START + row * 3 + col, ing.getMatchingStacks(), multiplier);
+                    // 1.21.11：有序配方原料元素变为 Optional，空 Optional 即空格，与原来空 Ingredient 同样输出空槽
+                    Optional<Ingredient> ing = ingredients.get(ingredientIndex);
+                    fillOutputSlot(SLOT_OUTPUT_START + row * 3 + col,
+                            ing.map(UncraftingTableBlockEntity::getMatchingStacks).orElse(new ItemStack[0]), multiplier);
                 }
             }
-        } else {
+        } else if (recipe instanceof ShapelessRecipe shapeless) {
+            List<Ingredient> ingredients = ((ShapelessIngredientsAccessor) shapeless).getIngredients();
             for (int i = 0; i < ingredients.size() && i < 9; i++) {
-                fillOutputSlot(SLOT_OUTPUT_START + i, ingredients.get(i).getMatchingStacks(), multiplier);
+                fillOutputSlot(SLOT_OUTPUT_START + i, getMatchingStacks(ingredients.get(i)), multiplier);
             }
         }
     }
 
-    private void fillSmithingOutput(Recipe<?> recipe, int inputCount) {
+    private void fillSmithingOutput(SmithingRecipe recipe, int inputCount) {
         if (world == null) return;
         int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
         float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
@@ -364,9 +406,18 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
                     * ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier * inputCount);
             inputConsumed = inputCount;
 
-            // 槽位 0: 纹饰模板
-            Item templateItem = trim.getPattern().value().templateItem().value();
-            ItemStack templateStack = new ItemStack(templateItem, inputCount);
+            // 1.21.11：smithing_trim 按图案拆成多个配方，按输入物品实际纹饰图案经反查表返还对应模板
+            if (!(world instanceof ServerWorld serverWorld)) return;
+            UncraftingRecipeIndex recipeIndex = UncraftingRecipeIndex.get(serverWorld);
+
+            // 槽位 0: 纹饰模板（按实际图案反查；无对应配方时该槽置空）
+            ItemStack templateStack = recipeIndex.getTemplateItemStack(trim.pattern());
+            if (templateStack != null) {
+                templateStack = templateStack.copy();
+                templateStack.setCount(inputCount);
+            } else {
+                templateStack = ItemStack.EMPTY;
+            }
             setStack(SLOT_OUTPUT_START, templateStack);
 
             // 槽位 1: 抹除纹饰的原装备
@@ -381,15 +432,15 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
             }
             setStack(SLOT_OUTPUT_START + 1, baseStack);
 
-            // 槽位 2: 纹饰矿材料
-            ArmorTrimMaterial trimMaterial = trim.getMaterial().value();
-            Item materialItem = trimMaterial.ingredient().value();
-            ItemStack materialStack = new ItemStack(materialItem, inputCount);
-            setStack(SLOT_OUTPUT_START + 2, materialStack);
+            // 槽位 2: 纹饰矿材料（按实际材料反查；查不到时跳过该槽位，不构造空物品堆）
+            Item materialItem = recipeIndex.getMaterialItem(trim.material());
+            if (materialItem != null) {
+                setStack(SLOT_OUTPUT_START + 2, new ItemStack(materialItem, inputCount));
+            }
             return;
         }
 
-        ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
+        ItemStack recipeOutput = getSmithingResult(recipe);
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -400,15 +451,15 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
         Ingredient[] parts;
         if (recipe instanceof SmithingTransformRecipe transform) {
-            SmithingTransformRecipeAccessor accessor = (SmithingTransformRecipeAccessor) transform;
-            parts = new Ingredient[]{accessor.getTemplate(), accessor.getBase(), accessor.getAddition()};
+            // 1.21.11：template()/base()/addition() 已有公开访问器（template/addition 为 Optional，空则按无匹配处理）
+            parts = new Ingredient[]{transform.template().orElse(null), transform.base(), transform.addition().orElse(null)};
         } else {
             return;
         }
 
         for (int i = 0; i < 3; i++) {
             Ingredient ing = parts[i];
-            fillOutputSlot(SLOT_OUTPUT_START + i, ing == null ? new ItemStack[0] : ing.getMatchingStacks(), multiplier);
+            fillOutputSlot(SLOT_OUTPUT_START + i, ing == null ? new ItemStack[0] : getMatchingStacks(ing), multiplier);
         }
     }
 
@@ -416,7 +467,7 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         if (world == null) return;
         int baseXpCost = ThreeInOneUncraftingTable.CONFIG.baseXpCost;
         float xpCostMultiplier = ThreeInOneUncraftingTable.CONFIG.xpCostMultiplier;
-        ItemStack recipeOutput = recipe.getResult(world.getRegistryManager());
+        ItemStack recipeOutput = ((SingleStackRecipeAccessor) recipe).getResult().copy();
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -426,14 +477,12 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         inputConsumed = multiplier * recipeOutputCount;
 
         // 保持原语义：无匹配原料时不改动输出槽（不强制清空）
-        if (!recipe.getIngredients().isEmpty()) {
-            Ingredient ing = recipe.getIngredients().getFirst();
-            ItemStack[] matching = ing.getMatchingStacks();
-            if (matching.length > 0) {
-                ItemStack stack = matching[0].copy();
-                stack.setCount(multiplier);
-                setStack(SLOT_OUTPUT_START, stack);
-            }
+        Ingredient ing = recipe.ingredient();
+        ItemStack[] matching = getMatchingStacks(ing);
+        if (matching.length > 0) {
+            ItemStack stack = matching[0].copy();
+            stack.setCount(multiplier);
+            setStack(SLOT_OUTPUT_START, stack);
         }
     }
 
@@ -536,7 +585,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
         return Text.translatable("container.three_in_one_uncrafting_table.uncrafting_table");
     }
 
+    // 接口位于 @NullMarked 作用域，显式标注以保持空值语义一致（返回值与形参均非空）
     @Override
+    @org.jspecify.annotations.NullMarked
     public BlockPos getScreenOpeningData(ServerPlayerEntity serverPlayerEntity) {
         return this.pos;
     }

@@ -210,6 +210,9 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
         return false;
     }
 
+    // 按用户要求保持与 1.21.1 原实现一致的 SlotItemHandler 槽位联动逻辑，不迁移到新容器 API；
+    // forRemoval 告警经实测 javac 与 IDEA 均由 removal key 抑制（双 key 写法会被 IDEA 误报“冗余禁止”）
+    @SuppressWarnings("removal")
     private static class OutputSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
         private final UncraftingTableBlockEntity blockEntity;
 
@@ -240,6 +243,8 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
         }
     }
 
+    // 同 OutputSlotItemHandler：保持与原实现一致的 SlotItemHandler 联动，抑制 forRemoval 告警
+    @SuppressWarnings("removal")
     private static class InputSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
         private final UncraftingTableBlockEntity blockEntity;
 
@@ -262,6 +267,8 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
         }
     }
 
+    // 同 OutputSlotItemHandler：保持与原实现一致的 SlotItemHandler 联动，抑制 forRemoval 告警
+    @SuppressWarnings("removal")
     private static class BookSlotItemHandler extends net.neoforged.neoforge.items.SlotItemHandler {
         private final UncraftingTableBlockEntity blockEntity;
 

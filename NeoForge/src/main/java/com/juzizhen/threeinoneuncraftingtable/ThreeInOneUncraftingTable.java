@@ -30,28 +30,22 @@ import org.slf4j.Logger;
 public class ThreeInOneUncraftingTable {
     public static final String MOD_ID = "three_in_one_uncrafting_table";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static boolean isTestVersion = false;
-    public static String versionType = null;
-
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MOD_ID);
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, MOD_ID);
-
     public static final DeferredBlock<UncraftingTableBlock> UNCRAFTING_TABLE =
-            BLOCKS.register("uncrafting_table",
-                    () -> new UncraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SMITHING_TABLE)));
-
+            // 1.21.11：BlockBehaviour.Properties 构造方块时需已绑定 block id，必须由 registerBlock 的
+            // id 绑定重载注入（setId），自行构造 Properties.ofFullCopy 会在注册期抛 "Block id not set"
+            BLOCKS.registerBlock("uncrafting_table", UncraftingTableBlock::new,
+                    () -> BlockBehaviour.Properties.ofFullCopy(Blocks.SMITHING_TABLE));
     public static final DeferredItem<BlockItem> UNCRAFTING_TABLE_ITEM =
             ITEMS.registerSimpleBlockItem("uncrafting_table", UNCRAFTING_TABLE);
-
-    @SuppressWarnings("ConstantConditions")
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<UncraftingTableBlockEntity>> UNCRAFTING_TABLE_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("uncrafting_table",
-                    () -> BlockEntityType.Builder.of(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE.get()).build(null));
-
+                    () -> new BlockEntityType<>(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE.get()));
     public static final DeferredHolder<MenuType<?>, MenuType<UncraftingScreenHandler>> UNCRAFTING_SCREEN_HANDLER =
             MENUS.register("uncrafting_table",
                     () -> IMenuTypeExtension.create((windowId, inv, data) -> {
@@ -62,6 +56,8 @@ public class ThreeInOneUncraftingTable {
                         }
                         return new UncraftingScreenHandler(windowId, inv, be);
                     }));
+    public static boolean isTestVersion = false;
+    public static String versionType = null;
 
     public ThreeInOneUncraftingTable(IEventBus modEventBus, ModContainer modContainer) {
         // 注册官方标准 TOML 配置（config/three_in_one_uncrafting_table-common.toml）

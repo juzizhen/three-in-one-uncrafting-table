@@ -7,6 +7,7 @@ import com.juzizhen.threeinoneuncraftingtable.config.ModConfig;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.AbstractBlock;
@@ -18,6 +19,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -27,31 +30,45 @@ import org.slf4j.LoggerFactory;
 public class ThreeInOneUncraftingTable implements ModInitializer {
     public static final String MOD_ID = "three_in_one_uncrafting_table";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Identifier UNCRAFTING_TABLE_ID = Identifier.of(MOD_ID, "uncrafting_table");
+    // 1.21.2+：Block/Item 注册必须在 Settings 中携带 registryKey
+    public static final RegistryKey<Block> UNCRAFTING_TABLE_KEY = RegistryKey.of(RegistryKeys.BLOCK, UNCRAFTING_TABLE_ID);
+    public static final RegistryKey<Item> UNCRAFTING_TABLE_ITEM_KEY = RegistryKey.of(RegistryKeys.ITEM, UNCRAFTING_TABLE_ID);
     public static final Block UNCRAFTING_TABLE = Registry.register(
             Registries.BLOCK,
-            Identifier.of(MOD_ID, "uncrafting_table"),
-            new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE))
+            UNCRAFTING_TABLE_KEY,
+            new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE).registryKey(UNCRAFTING_TABLE_KEY))
     );
     public static final Item UNCRAFTING_TABLE_ITEM = Registry.register(
             Registries.ITEM,
-            Identifier.of(MOD_ID, "uncrafting_table"),
-            new BlockItem(UNCRAFTING_TABLE, new Item.Settings())
+            UNCRAFTING_TABLE_ITEM_KEY,
+            // useBlockPrefixedTranslationKey 保持翻译键 block.three_in_one_uncrafting_table.uncrafting_table 不变
+            new BlockItem(UNCRAFTING_TABLE, new Item.Settings().registryKey(UNCRAFTING_TABLE_ITEM_KEY).useBlockPrefixedTranslationKey())
     );
     public static final BlockEntityType<UncraftingTableBlockEntity> UNCRAFTING_TABLE_BLOCK_ENTITY =
             Registry.register(
                     Registries.BLOCK_ENTITY_TYPE,
-                    Identifier.of(MOD_ID, "uncrafting_table"),
-                    BlockEntityType.Builder.create(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE).build()
+                    RegistryKey.of(RegistryKeys.BLOCK_ENTITY_TYPE, UNCRAFTING_TABLE_ID),
+                    // 1.21.2+：BlockEntityType.Builder 已移除，改用 Fabric API 的构建器
+                    FabricBlockEntityTypeBuilder.create(UncraftingTableBlockEntity::new, UNCRAFTING_TABLE).build()
             );
     public static final ScreenHandlerType<UncraftingScreenHandler> UNCRAFTING_SCREEN_HANDLER =
             Registry.register(
                     Registries.SCREEN_HANDLER,
-                    Identifier.of(MOD_ID, "uncrafting_table"),
+                    RegistryKey.of(RegistryKeys.SCREEN_HANDLER, UNCRAFTING_TABLE_ID),
                     new ExtendedScreenHandlerType<>(UncraftingScreenHandler::new, BlockPos.PACKET_CODEC)
             );
     public static ModConfig CONFIG;
     public static boolean isTestVersion = false;
     public static String versionType = null;
+
+    private static String detectVersionType(String version) {
+        if (version == null || version.isEmpty()) return null;
+        String lower = version.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("beta")) return "beta";
+        if (lower.contains("alpha")) return "alpha";
+        return null;
+    }
 
     @Override
     public void onInitialize() {
@@ -69,13 +86,5 @@ public class ThreeInOneUncraftingTable implements ModInitializer {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
 
         LOGGER.info("Three In One Uncrafting Table Initialized!");
-    }
-
-    private static String detectVersionType(String version) {
-        if (version == null || version.isEmpty()) return null;
-        String lower = version.toLowerCase(java.util.Locale.ROOT);
-        if (lower.contains("beta")) return "beta";
-        if (lower.contains("alpha")) return "alpha";
-        return null;
     }
 }

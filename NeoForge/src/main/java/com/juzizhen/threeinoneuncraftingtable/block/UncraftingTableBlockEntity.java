@@ -12,33 +12,32 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.armortrim.ArmorTrim;
-import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+// 按用户要求保持与 1.21.1 原实现一致的 ItemStackHandler 容器联动逻辑，不迁移到新容器 API；
+// SlotItemHandler/ItemStackHandler 在 NeoForge 1.21.9+ 被标记弃用且待移除，但当前无等价替代，故整类抑制
+@SuppressWarnings("removal")
 public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_BOOK = 1;
     public static final int SLOT_OUTPUT_START = 2;
     public static final int SLOT_OUTPUT_END = 10;
-
-    // 批量槽位变更时抑制逐次方块更新广播，批末合并为一次（可嵌套）
-    private int batchDepth = 0;
-    private boolean batchDirty = false;
-
-    private final ItemStackHandler inventory = new ItemStackHandler(11) {
+    private static final ItemStack[] EMPTY_STACKS = new ItemStack[0];
+    public final List<RecipeHolder<?>> matchingRecipes = new ArrayList<>();
+    // import 无法被 @SuppressWarnings 覆盖，故此处使用全限定名（弃用/待移除告警由类级注解抑制）
+    private final net.neoforged.neoforge.items.ItemStackHandler inventory = new net.neoforged.neoforge.items.ItemStackHandler(11) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
@@ -51,12 +50,13 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             }
         }
     };
-
-    public final List<RecipeHolder<?>> matchingRecipes = new ArrayList<>();
     public int outputGetCount = 0;
     public boolean noOutputs = true;
     public int onSlotClickIndex = 0;
     public int experienceCost = 0;
+    // 批量槽位变更时抑制逐次方块更新广播，批末合并为一次（可嵌套）
+    private int batchDepth = 0;
+    private boolean batchDirty = false;
     private int selectedRecipeIndex = 0;
     private int inputConsumed = 0;
 
@@ -64,7 +64,30 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         super(ThreeInOneUncraftingTable.UNCRAFTING_TABLE_BLOCK_ENTITY.get(), pos, state);
     }
 
-    public ItemStackHandler getInventory() {
+    /**
+     * 判断物品是否在拆解黑名单中（按物品注册表 ID 匹配，如 minecraft:diamond_sword）
+     */
+    private static boolean isItemBlacklisted(ItemStack input) {
+        List<? extends String> blacklist = ModConfig.BLACKLIST_ITEMS.get();
+        if (blacklist.isEmpty()) return false;
+        String itemId = BuiltInRegistries.ITEM.getKey(input.getItem()).toString();
+        for (String blacklisted : blacklist) {
+            if (itemId.equalsIgnoreCase(blacklisted)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 1.21.11：Ingredient#getItems 已移除，改由 items() 流取首个匹配物品构造堆（保持“取首个”语义）
+     */
+    @SuppressWarnings("deprecation") // items() 在 1.21.11 是读取原料匹配物品的唯一可用途径，无未弃用替代
+    private static ItemStack[] matchingStacks(Ingredient ingredient) {
+        return ingredient.items().findFirst()
+                .map(holder -> new ItemStack[]{new ItemStack(holder.value())})
+                .orElse(EMPTY_STACKS);
+    }
+
+    public net.neoforged.neoforge.items.ItemStackHandler getInventory() {
         return inventory;
     }
 
@@ -270,18 +293,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         recipeIndex.collectMatching(input, matchingRecipes);
     }
 
-    /** 判断物品是否在拆解黑名单中（按物品注册表 ID 匹配，如 minecraft:diamond_sword） */
-    private static boolean isItemBlacklisted(ItemStack input) {
-        List<? extends String> blacklist = ModConfig.BLACKLIST_ITEMS.get();
-        if (blacklist.isEmpty()) return false;
-        String itemId = BuiltInRegistries.ITEM.getKey(input.getItem()).toString();
-        for (String blacklisted : blacklist) {
-            if (itemId.equalsIgnoreCase(blacklisted)) return true;
-        }
-        return false;
-    }
-
-    /** 按当前选中的配方索引填充输出槽（尊重配置开关） */
+    /**
+     * 按当前选中的配方索引填充输出槽（尊重配置开关）
+     */
     private void fillSelectedRecipe(ItemStack input) {
         if (matchingRecipes.isEmpty() || selectedRecipeIndex >= matchingRecipes.size()) return;
 
@@ -300,7 +314,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    /** 耐久损耗加价（损伤比例越高加价越多）；启用附魔转移且放入书本时按附魔等级追加经验 */
+    /**
+     * 耐久损耗加价（损伤比例越高加价越多）；启用附魔转移且放入书本时按附魔等级追加经验
+     */
     private int applyDamageAndEnchantmentCost(int cost, float xpCostMultiplier) {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isDamageableItem()) {
@@ -318,7 +334,9 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         return cost;
     }
 
-    /** 将原料的第一个匹配堆按倍数放入输出槽，无匹配时清空该槽 */
+    /**
+     * 将原料的第一个匹配堆按倍数放入输出槽，无匹配时清空该槽
+     */
     private void fillOutputSlot(int slotIndex, ItemStack[] matching, int multiplier) {
         if (matching.length > 0) {
             ItemStack stack = matching[0].copy();
@@ -333,8 +351,15 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         if (level == null) return;
         int baseXpCost = ModConfig.BASE_XP_COST.get();
         float xpCostMultiplier = ModConfig.XP_COST_MULTIPLIER.get().floatValue();
-        List<Ingredient> ingredients = recipe.getIngredients();
-        ItemStack recipeOutput = recipe.getResultItem(level.registryAccess());
+        // 1.21.11 已移除 Recipe#getResultItem，result 字段经 accesstransformer.cfg 开放读取
+        ItemStack recipeOutput;
+        if (recipe instanceof ShapedRecipe shaped) {
+            recipeOutput = shaped.result;
+        } else if (recipe instanceof ShapelessRecipe shapeless) {
+            recipeOutput = shapeless.result;
+        } else {
+            return;
+        }
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -346,19 +371,24 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         if (recipe instanceof ShapedRecipe shaped) {
             int width = shaped.getWidth();
             int height = shaped.getHeight();
+            // 1.21.11：ShapedRecipe#getIngredients 返回 List<Optional<Ingredient>>，空 Optional 当空格
+            List<Optional<Ingredient>> ingredients = shaped.getIngredients();
 
             for (int row = 0; row < height; row++) {
                 for (int col = 0; col < width; col++) {
                     int ingredientIndex = row * width + col;
                     if (ingredientIndex >= ingredients.size()) continue;
 
-                    Ingredient ing = ingredients.get(ingredientIndex);
-                    fillOutputSlot(SLOT_OUTPUT_START + row * 3 + col, ing.getItems(), multiplier);
+                    ItemStack[] matching = ingredients.get(ingredientIndex)
+                            .map(UncraftingTableBlockEntity::matchingStacks).orElse(EMPTY_STACKS);
+                    fillOutputSlot(SLOT_OUTPUT_START + row * 3 + col, matching, multiplier);
                 }
             }
-        } else {
+        } else if (recipe instanceof ShapelessRecipe shapeless) {
+            // ingredients 字段经 accesstransformer.cfg 开放（无公开 accessor）
+            List<Ingredient> ingredients = shapeless.ingredients;
             for (int i = 0; i < ingredients.size() && i < 9; i++) {
-                fillOutputSlot(SLOT_OUTPUT_START + i, ingredients.get(i).getItems(), multiplier);
+                fillOutputSlot(SLOT_OUTPUT_START + i, matchingStacks(ingredients.get(i)), multiplier);
             }
         }
     }
@@ -374,13 +404,21 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         ArmorTrim trim = inputStack.get(DataComponents.TRIM);
 
         if (trim != null) {
+            // 1.21.11 纹饰系统重构：TrimPattern#templateItem 与 TrimMaterial#ingredient 已移除，
+            // 改经 UncraftingRecipeIndex 构建期的反查表还原模板/材料物品
+            if (!(level instanceof ServerLevel serverLevel)) return;
             if (inputCount <= 0) return;
             experienceCost = Math.round(baseXpCost * xpCostMultiplier * inputCount);
             inputConsumed = inputCount;
 
-            Item templateItem = trim.pattern().value().templateItem().value();
-            ItemStack templateStack = new ItemStack(templateItem, inputCount);
-            inventory.setStackInSlot(SLOT_OUTPUT_START, templateStack);
+            UncraftingRecipeIndex recipeIndex = UncraftingRecipeIndex.get(serverLevel);
+
+            ItemStack templateStack = recipeIndex.getTemplateItemStack(trim.pattern());
+            if (templateStack != null) {
+                templateStack = templateStack.copy();
+                templateStack.setCount(inputCount);
+                inventory.setStackInSlot(SLOT_OUTPUT_START, templateStack);
+            }
 
             ItemStack baseStack = inputStack.copy();
             baseStack.setCount(inputCount);
@@ -392,14 +430,30 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
             }
             inventory.setStackInSlot(SLOT_OUTPUT_START + 1, baseStack);
 
-            TrimMaterial trimMaterial = trim.material().value();
-            Item materialItem = trimMaterial.ingredient().value();
-            ItemStack materialStack = new ItemStack(materialItem, inputCount);
-            inventory.setStackInSlot(SLOT_OUTPUT_START + 2, materialStack);
+            ItemStack materialStack = recipeIndex.getMaterialItemStack(trim.material());
+            if (materialStack != null) {
+                materialStack = materialStack.copy();
+                materialStack.setCount(inputCount);
+                inventory.setStackInSlot(SLOT_OUTPUT_START + 2, materialStack);
+            }
             return;
         }
 
-        ItemStack recipeOutput = recipe.getResultItem(level.registryAccess());
+        ItemStack recipeOutput;
+        // 模板/附加原料可能为空（orElse(null)），用可空局部变量声明；基础原料恒非空
+        @Nullable Ingredient templatePart;
+        Ingredient basePart;
+        @Nullable Ingredient additionPart;
+        if (recipe instanceof SmithingTransformRecipe transform) {
+            // 1.21.11：SmithingRecipe 接口公开 templateIngredient/baseIngredient/additionIngredient；result 经 accesstransformer.cfg 开放
+            recipeOutput = new ItemStack(transform.result.item(), transform.result.count(), transform.result.components());
+            templatePart = transform.templateIngredient().orElse(null);
+            basePart = transform.baseIngredient();
+            additionPart = transform.additionIngredient().orElse(null);
+        } else {
+            return;
+        }
+
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -408,24 +462,17 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         experienceCost = applyDamageAndEnchantmentCost(cost, xpCostMultiplier);
         inputConsumed = multiplier * recipeOutputCount;
 
-        Ingredient[] parts;
-        if (recipe instanceof SmithingTransformRecipe transform) {
-            // template/base/addition 由 META-INF/accesstransformer.cfg 开放访问
-            parts = new Ingredient[]{transform.template, transform.base, transform.addition};
-        } else {
-            return;
-        }
-
-        for (int i = 0; i < 3; i++) {
-            fillOutputSlot(SLOT_OUTPUT_START + i, parts[i].getItems(), multiplier);
-        }
+        fillOutputSlot(SLOT_OUTPUT_START, templatePart == null ? EMPTY_STACKS : matchingStacks(templatePart), multiplier);
+        fillOutputSlot(SLOT_OUTPUT_START + 1, matchingStacks(basePart), multiplier);
+        fillOutputSlot(SLOT_OUTPUT_START + 2, additionPart == null ? EMPTY_STACKS : matchingStacks(additionPart), multiplier);
     }
 
     private void fillStonecuttingOutput(StonecutterRecipe recipe, int inputCount) {
         if (level == null) return;
         int baseXpCost = ModConfig.BASE_XP_COST.get();
         float xpCostMultiplier = ModConfig.XP_COST_MULTIPLIER.get().floatValue();
-        ItemStack recipeOutput = recipe.getResultItem(level.registryAccess());
+        // result 字段经 accesstransformer.cfg 开放（result() 为 protected）
+        ItemStack recipeOutput = recipe.result;
         int recipeOutputCount = Math.max(1, recipeOutput.getCount());
         int multiplier = inputCount / recipeOutputCount;
 
@@ -435,14 +482,11 @@ public class UncraftingTableBlockEntity extends BlockEntity implements MenuProvi
         inputConsumed = multiplier * recipeOutputCount;
 
         // 保持原语义：无匹配原料时不改动输出槽（不强制清空）
-        if (!recipe.getIngredients().isEmpty()) {
-            Ingredient ing = recipe.getIngredients().getFirst();
-            ItemStack[] matching = ing.getItems();
-            if (matching.length > 0) {
-                ItemStack stack = matching[0].copy();
-                stack.setCount(multiplier);
-                inventory.setStackInSlot(SLOT_OUTPUT_START, stack);
-            }
+        ItemStack[] matching = matchingStacks(recipe.input());
+        if (matching.length > 0) {
+            ItemStack stack = matching[0].copy();
+            stack.setCount(multiplier);
+            inventory.setStackInSlot(SLOT_OUTPUT_START, stack);
         }
     }
 

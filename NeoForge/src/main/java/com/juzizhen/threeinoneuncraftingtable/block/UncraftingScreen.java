@@ -1,21 +1,23 @@
 package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
 
 public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHandler> {
-    private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
+    private static final Identifier TEXTURE =
+            Identifier.fromNamespaceAndPath(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
 
     private static final int BTN_LEFT_X = 117;
     private static final int BTN_LEFT_Y = 71;
@@ -63,45 +65,49 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
         }
 
         if (isHoveringLeftButton(mouseX, mouseY)) {
-            guiGraphics.renderTooltip(this.font,
+            guiGraphics.setTooltipForNextFrame(this.font,
                     List.of(Component.translatable("tooltip." + ThreeInOneUncraftingTable.MOD_ID + ".prev_recipe").getVisualOrderText()),
                     mouseX, mouseY);
         }
 
         if (isHoveringCenterButton(mouseX, mouseY)) {
-            guiGraphics.renderTooltip(this.font,
+            guiGraphics.setTooltipForNextFrame(this.font,
                     List.of(Component.translatable("tooltip." + ThreeInOneUncraftingTable.MOD_ID + ".move_all").getVisualOrderText()),
                     mouseX, mouseY);
         }
 
         if (isHoveringRightButton(mouseX, mouseY)) {
-            guiGraphics.renderTooltip(this.font,
+            guiGraphics.setTooltipForNextFrame(this.font,
                     List.of(Component.translatable("tooltip." + ThreeInOneUncraftingTable.MOD_ID + ".next_recipe").getVisualOrderText()),
                     mouseX, mouseY);
         }
     }
 
+    // 访问 ItemStackHandler 容器（与 BlockEntity 保持原实现联动），抑制 forRemoval 告警
+    @SuppressWarnings("removal")
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight, 256, 256);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.leftPos, this.topPos, 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 256);
 
         if (!this.menu.hasRecipes() || menu.blockEntity.getInventory().getStackInSlot(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 71, this.topPos + 33, 176, 0, 28, 21, 256, 256);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.leftPos + 71, this.topPos + 33, 176.0F, 0.0F, 28, 21, 256, 256);
         }
 
         boolean hoverLeft = isHoveringLeftButton(mouseX, mouseY);
-        guiGraphics.blit(TEXTURE, this.leftPos + BTN_LEFT_X, this.topPos + BTN_LEFT_Y,
-                177, hoverLeft ? 35 : 23, 7, 11, 256, 256);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.leftPos + BTN_LEFT_X, this.topPos + BTN_LEFT_Y,
+                177.0F, hoverLeft ? 35.0F : 23.0F, 7, 11, 256, 256);
 
         boolean hoverCenter = isHoveringCenterButton(mouseX, mouseY);
-        guiGraphics.blit(TEXTURE, this.leftPos + BTN_CENTER_X, this.topPos + BTN_CENTER_Y,
-                177, hoverCenter ? 57 : 49, 11, 7, 256, 256);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.leftPos + BTN_CENTER_X, this.topPos + BTN_CENTER_Y,
+                177.0F, hoverCenter ? 57.0F : 49.0F, 11, 7, 256, 256);
 
         boolean hoverRight = isHoveringRightButton(mouseX, mouseY);
-        guiGraphics.blit(TEXTURE, this.leftPos + BTN_RIGHT_X, this.topPos + BTN_RIGHT_Y,
-                185, hoverRight ? 35 : 23, 7, 11, 256, 256);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.leftPos + BTN_RIGHT_X, this.topPos + BTN_RIGHT_Y,
+                185.0F, hoverRight ? 35.0F : 23.0F, 7, 11, 256, 256);
     }
 
+    // 访问 ItemStackHandler 容器（与 BlockEntity 保持原实现联动），抑制 forRemoval 告警
+    @SuppressWarnings("removal")
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font, this.title, 8, 6, 4210752, false);
@@ -125,10 +131,12 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         Minecraft mc = Minecraft.getInstance();
+        int mouseX = (int) event.x();
+        int mouseY = (int) event.y();
 
-        if (isHoveringLeftButton((int) mouseX, (int) mouseY)) {
+        if (isHoveringLeftButton(mouseX, mouseY)) {
             if (mc.gameMode != null) {
                 mc.gameMode.handleInventoryButtonClick(this.menu.containerId, 0);
             }
@@ -136,7 +144,7 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
             return true;
         }
 
-        if (isHoveringCenterButton((int) mouseX, (int) mouseY)) {
+        if (isHoveringCenterButton(mouseX, mouseY)) {
             if (mc.gameMode != null) {
                 mc.gameMode.handleInventoryButtonClick(this.menu.containerId, 2);
             }
@@ -144,7 +152,7 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
             return true;
         }
 
-        if (isHoveringRightButton((int) mouseX, (int) mouseY)) {
+        if (isHoveringRightButton(mouseX, mouseY)) {
             if (mc.gameMode != null) {
                 mc.gameMode.handleInventoryButtonClick(this.menu.containerId, 1);
             }
@@ -152,7 +160,7 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
             return true;
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     private boolean isHoveringLeftButton(int mouseX, int mouseY) {

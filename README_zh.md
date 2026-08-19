@@ -5,7 +5,9 @@
 ![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/icon.png)
 
 ---
+
 ## 📖 简介
+
 - 本仓库开源许可为 **GPL-3.0**。
 - 遇到任何问题请务必到[**issues**](https://github.com/juzizhen/three-in-one-uncrafting-table/issues)提交问题！
 - 可拆解工作台、锻造台和切石机的合成配方。
@@ -34,6 +36,8 @@
 
 ![附魔转移](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/6.gif)
 ---
+
 ## 链接
+
 - [Modrinth](https://modrinth.com/mod/three-in-one-uncrafting-table)
 - [Curseforge](https://www.curseforge.com/minecraft/mc-mods/three-in-one-uncrafting-table)

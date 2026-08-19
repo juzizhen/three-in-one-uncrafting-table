@@ -7,35 +7,40 @@
 ### 👉[中文 README_zh](https://github.com/juzizhen/three-in-one-uncrafting-table/blob/1.21.1/README_zh.md)👈
 
 ---
+
 ## 📖 Introduction
+
 - This repository is licensed under **GPL-3.0**.
-- If you encounter any problems, please be sure to submit an issue at [**issues**](https://github.com/juzizhen/three-in-one-uncrafting-table/issues)!
+- If you encounter any problems, please be sure to submit an issue at [
+  **issues**](https://github.com/juzizhen/three-in-one-uncrafting-table/issues)!
 - Recipes that support Crafting Table, Smithing Table, and Stonecutter.
 
 Recipes for Uncrafting Table.
-  
+
 ![Recipes for Uncrafting Table](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/1.png)
-  
+
 Uncrafting Smithing Template Recipes.
-  
+
 ![Uncrafting Smithing Template Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/2.png)
-  
+
 Uncrafting Upgrade Smithing Template Recipes.
-  
+
 ![Uncrafting Upgrade Smithing Template Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/3.png)
-  
+
 Uncrafting Stonecutter Recipes.
-  
+
 ![Uncrafting Stonecutter Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/4.png)
-  
+
 Uncrafting Crafting Table Recipes.
-  
+
 ![Uncrafting Crafting Table Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/5.png)
 
 Enchantment Transfer.
 
 ![Uncrafting Crafting Table Recipes](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/6.gif)
 ---
+
 ## Links
+
 - [Modrinth](https://modrinth.com/mod/three-in-one-uncrafting-table)
 - [Curseforge](https://www.curseforge.com/minecraft/mc-mods/three-in-one-uncrafting-table)

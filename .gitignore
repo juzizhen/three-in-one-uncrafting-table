@@ -43,3 +43,6 @@ replay_*.log
 # util
 version/
 /net
+
+# test artifacts
+test-screenshots/

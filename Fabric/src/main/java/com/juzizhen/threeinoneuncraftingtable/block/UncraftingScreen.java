@@ -2,6 +2,8 @@ package com.juzizhen.threeinoneuncraftingtable.block;
 
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.sound.PositionedSoundInstance;
@@ -87,34 +89,34 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
 
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight, 256, 256);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight, 256, 256);
 
         if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
-            context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21, 256, 256);
         }
 
         boolean hoverLeft = mouseX >= this.x + BTN_LEFT_X && mouseX < this.x + BTN_LEFT_X + BTN_LEFT_W &&
                 mouseY >= this.y + BTN_LEFT_Y && mouseY < this.y + BTN_LEFT_Y + BTN_LEFT_H;
         if (hoverLeft) {
-            context.drawTexture(TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 35, 7, 11, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 35, 7, 11, 256, 256);
         } else {
-            context.drawTexture(TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 23, 7, 11, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + BTN_LEFT_X, this.y + BTN_LEFT_Y, 177, 23, 7, 11, 256, 256);
         }
 
         boolean hoverCenter = mouseX >= this.x + BTN_CENTER_X && mouseX < this.x + BTN_CENTER_X + BTN_CENTER_W &&
                 mouseY >= this.y + BTN_CENTER_Y && mouseY < this.y + BTN_CENTER_Y + BTN_CENTER_H;
         if (hoverCenter) {
-            context.drawTexture(TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 57, 11, 7, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 57, 11, 7, 256, 256);
         } else {
-            context.drawTexture(TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 49, 11, 7, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + BTN_CENTER_X, this.y + BTN_CENTER_Y, 177, 49, 11, 7, 256, 256);
         }
 
         boolean hoverRight = mouseX >= this.x + BTN_RIGHT_X && mouseX < this.x + BTN_RIGHT_X + BTN_RIGHT_W &&
                 mouseY >= this.y + BTN_RIGHT_Y && mouseY < this.y + BTN_RIGHT_Y + BTN_RIGHT_H;
         if (hoverRight) {
-            context.drawTexture(TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 35, 7, 11, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 35, 7, 11, 256, 256);
         } else {
-            context.drawTexture(TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 23, 7, 11, 256, 256);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, this.x + BTN_RIGHT_X, this.y + BTN_RIGHT_Y, 185, 23, 7, 11, 256, 256);
         }
     }
 
@@ -140,13 +142,16 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+
         if (mouseX >= this.x + BTN_LEFT_X && mouseX < this.x + BTN_LEFT_X + BTN_LEFT_W &&
                 mouseY >= this.y + BTN_LEFT_Y && mouseY < this.y + BTN_LEFT_Y + BTN_LEFT_H) {
             if (this.client != null && this.client.interactionManager != null) {
                 this.client.interactionManager.clickButton(this.handler.syncId, 0);
             }
-            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.ui(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 
@@ -155,7 +160,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
             if (this.client != null && this.client.interactionManager != null) {
                 this.client.interactionManager.clickButton(this.handler.syncId, 2);
             }
-            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.ui(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 
@@ -164,11 +169,11 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
             if (this.client != null && this.client.interactionManager != null) {
                 this.client.interactionManager.clickButton(this.handler.syncId, 1);
             }
-            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.ui(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(click, doubled);
     }
 
     private void renderTestVersionWarning(DrawContext context, long elapsedMs) {

@@ -22,14 +22,6 @@ public class UncraftingScreenHandler extends ScreenHandler {
         this(syncId, playerInventory, getBlockEntity(playerInventory, pos));
     }
 
-    private static UncraftingTableBlockEntity getBlockEntity(PlayerInventory playerInventory, BlockPos pos) {
-        BlockEntity blockEntity = playerInventory.player.getWorld().getBlockEntity(pos);
-        if (!(blockEntity instanceof UncraftingTableBlockEntity uncraftingTable)) {
-            throw new IllegalStateException("No UncraftingTableBlockEntity at " + pos);
-        }
-        return uncraftingTable;
-    }
-
     // 服务端构造函数
     public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER, syncId);
@@ -71,9 +63,17 @@ public class UncraftingScreenHandler extends ScreenHandler {
         });
     }
 
+    private static UncraftingTableBlockEntity getBlockEntity(PlayerInventory playerInventory, BlockPos pos) {
+        BlockEntity blockEntity = playerInventory.player.getEntityWorld().getBlockEntity(pos);
+        if (!(blockEntity instanceof UncraftingTableBlockEntity uncraftingTable)) {
+            throw new IllegalStateException("No UncraftingTableBlockEntity at " + pos);
+        }
+        return uncraftingTable;
+    }
+
     @Override
     public ItemStack quickMove(PlayerEntity player, int index) {
-        if (player.getWorld().isClient()) {
+        if (player.getEntityWorld().isClient()) {
             return ItemStack.EMPTY;
         }
 
@@ -197,7 +197,7 @@ public class UncraftingScreenHandler extends ScreenHandler {
     public boolean onButtonClick(PlayerEntity player, int id) {
         if (id == 2) {
             // 一键收取：将所有输出槽物品移到背包，附魔书也一起移走
-            if (player.getWorld().isClient()) return true;
+            if (player.getEntityWorld().isClient()) return true;
             for (int i = UncraftingTableBlockEntity.SLOT_OUTPUT_START; i <= UncraftingTableBlockEntity.SLOT_OUTPUT_END; i++) {
                 Slot slot = this.slots.get(i);
                 if (slot.hasStack()) {
