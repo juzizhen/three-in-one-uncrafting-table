@@ -34,7 +34,6 @@ public class UncraftingRecipeIndex {
     private static final String KUBEJS_NAMESPACE = "kubejs";
     private static final String CRAFTTWEAKER_NAMESPACE = "crafttweaker";
 
-    // 首次访问前为 null，显式标注可空（包处于 @NullMarked 作用域）
     private static @Nullable RecipeManager cachedRecipeManager;
     private static @Nullable UncraftingRecipeIndex cachedIndex;
 

@@ -122,7 +122,8 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
 
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
-        context.drawText(this.textRenderer, this.title, 8, 6, 4210752, false);
+        // 1.21.11：drawText 对 alpha=0 的颜色直接跳过，颜色常量必须携带不透明 alpha
+        context.drawText(this.textRenderer, this.title, 8, 6, 0xFF404040, false);
 
         if (!handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
             int xpCost = this.handler.blockEntity.experienceCost;
@@ -131,7 +132,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
                 if (this.client != null && this.client.player != null) {
                     hasEnoughXp = this.client.player.isCreative() || this.client.player.experienceLevel >= xpCost;
                 }
-                int color = hasEnoughXp ? 8453920 : 16736352;
+                int color = hasEnoughXp ? 0xFF80FF20 : 0xFFFF6060;
 
                 Text xpText = Text.translatable("tooltip.three_in_one_uncrafting_table.need_xp", xpCost);
                 int textWidth = this.textRenderer.getWidth(xpText);

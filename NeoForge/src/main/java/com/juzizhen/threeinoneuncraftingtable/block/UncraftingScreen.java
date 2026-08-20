@@ -110,7 +110,8 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
     @SuppressWarnings("removal")
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, 8, 6, 4210752, false);
+        // 1.21.11：drawString 对 alpha=0 的颜色直接跳过，颜色常量必须携带不透明 alpha
+        guiGraphics.drawString(this.font, this.title, 8, 6, 0xFF404040, false);
 
         if (!menu.blockEntity.getInventory().getStackInSlot(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
             int xpCost = this.menu.blockEntity.experienceCost;
@@ -120,7 +121,7 @@ public class UncraftingScreen extends AbstractContainerScreen<UncraftingScreenHa
                 if (mc.player != null) {
                     hasEnoughXp = mc.player.isCreative() || mc.player.experienceLevel >= xpCost;
                 }
-                int color = hasEnoughXp ? 8453920 : 16736352;
+                int color = hasEnoughXp ? 0xFF80FF20 : 0xFFFF6060;
 
                 Component xpText = Component.translatable("tooltip." + ThreeInOneUncraftingTable.MOD_ID + ".need_xp", xpCost);
                 int textWidth = this.font.width(xpText);

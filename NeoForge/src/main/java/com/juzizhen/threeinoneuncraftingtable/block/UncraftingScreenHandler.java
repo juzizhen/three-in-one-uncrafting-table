@@ -217,7 +217,7 @@ public class UncraftingScreenHandler extends AbstractContainerMenu {
         private final UncraftingTableBlockEntity blockEntity;
 
         public OutputSlotItemHandler(net.neoforged.neoforge.items.ItemStackHandler handler,
-                                      UncraftingTableBlockEntity blockEntity, int index, int x, int y) {
+                                     UncraftingTableBlockEntity blockEntity, int index, int x, int y) {
             super(handler, index, x, y);
             this.blockEntity = blockEntity;
         }

@@ -2,6 +2,7 @@ package com.juzizhen.threeinoneuncraftingtable.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import com.juzizhen.threeinoneuncraftingtable.ThreeInOneUncraftingTable;
 
 import java.io.*;
@@ -32,6 +33,10 @@ public class ModConfig {
                 config = gson.fromJson(reader, ModConfig.class);
             } catch (IOException e) {
                 ThreeInOneUncraftingTable.LOGGER.warn(e.getMessage());
+            } catch (JsonParseException e) {
+                // 用户手改导致的 JSON 语法错误：回退默认配置并重写文件，避免启动崩溃
+                ThreeInOneUncraftingTable.LOGGER.warn("Config file {} is corrupted, falling back to defaults: {}",
+                        CONFIG_FILE, e.getMessage());
             }
         }
         if (config == null) {

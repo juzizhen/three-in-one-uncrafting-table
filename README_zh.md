@@ -2,7 +2,7 @@
 
 > 这是个三合一拆解台。
 
-![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/icon.png)
+![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/icon.png)
 
 ---
 
@@ -14,27 +14,27 @@
 
 拆解台合成配方
 
-![拆解台合成配方](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/1.png)
+![拆解台合成配方](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/1.png)
 
 拆解锻造模板配方
 
-![拆解锻造模板](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/2.png)
+![拆解锻造模板](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/2.png)
 
 拆解升级模板配方
 
-![拆解升级模板](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/3.png)
+![拆解升级模板](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/3.png)
 
 拆解切石机配方
 
-![拆解切石机配方](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/4.png)
+![拆解切石机配方](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/4.png)
 
 拆解工作台配方
 
-![拆解工作台配方](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/5.png)
+![拆解工作台配方](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/5.png)
 
 附魔转移
 
-![附魔转移](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.1/image/6.gif)
+![附魔转移](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.21.11/image/6.gif)
 ---
 
 ## 链接
