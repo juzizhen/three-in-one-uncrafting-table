@@ -6,12 +6,11 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.util.math.MathHelper;
 
 public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     private static final Identifier TEXTURE = new Identifier(ThreeInOneUncraftingTable.MOD_ID, "textures/gui/uncrafting_table.png");
@@ -34,10 +33,20 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     private static final int BTN_CENTER_X = (BTN_LEFT_X + BTN_LEFT_W / 2 + BTN_RIGHT_X + BTN_RIGHT_W / 2) / 2 - BTN_CENTER_W / 2;
     private static final int BTN_CENTER_Y = 73;
 
+    private static final long WARNING_DURATION_MS = 3000;
+    private static boolean warningShownThisSession = false;
+    private long openTime = -1;
+
     public UncraftingScreen(UncraftingScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
         this.backgroundWidth = 176;
         this.backgroundHeight = 166;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        openTime = Util.getMeasuringTimeMs();
     }
 
     @Override
@@ -46,30 +55,33 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
 
-        Slot bookSlot = this.handler.slots.get(0);
-        if (!bookSlot.hasStack()) {
-            ItemStack ghostBook = new ItemStack(Items.BOOK);
-            context.drawItemInSlot(this.textRenderer, ghostBook, bookSlot.x + this.x, bookSlot.y + this.y);
+        if (ThreeInOneUncraftingTable.isTestVersion && !warningShownThisSession && openTime >= 0) {
+            long elapsed = Util.getMeasuringTimeMs() - openTime;
+            if (elapsed < WARNING_DURATION_MS) {
+                renderTestVersionWarning(context, elapsed);
+            } else {
+                warningShownThisSession = true;
+            }
         }
 
         if (mouseX >= this.x + BTN_LEFT_X && mouseX < this.x + BTN_LEFT_X + BTN_LEFT_W &&
                 mouseY >= this.y + BTN_LEFT_Y && mouseY < this.y + BTN_LEFT_Y + BTN_LEFT_H) {
             context.drawTooltip(this.textRenderer,
-                    Text.translatable("tooltip.three-in-one-uncrafting-table.prev_recipe"),
+                    Text.translatable("tooltip.three_in_one_uncrafting_table.prev_recipe"),
                     mouseX, mouseY);
         }
 
         if (mouseX >= this.x + BTN_CENTER_X && mouseX < this.x + BTN_CENTER_X + BTN_CENTER_W &&
                 mouseY >= this.y + BTN_CENTER_Y && mouseY < this.y + BTN_CENTER_Y + BTN_CENTER_H) {
             context.drawTooltip(this.textRenderer,
-                    Text.translatable("tooltip.three-in-one-uncrafting-table.move_all"),
+                    Text.translatable("tooltip.three_in_one_uncrafting_table.move_all"),
                     mouseX, mouseY);
         }
 
         if (mouseX >= this.x + BTN_RIGHT_X && mouseX < this.x + BTN_RIGHT_X + BTN_RIGHT_W &&
                 mouseY >= this.y + BTN_RIGHT_Y && mouseY < this.y + BTN_RIGHT_Y + BTN_RIGHT_H) {
             context.drawTooltip(this.textRenderer,
-                    Text.translatable("tooltip.three-in-one-uncrafting-table.next_recipe"),
+                    Text.translatable("tooltip.three_in_one_uncrafting_table.next_recipe"),
                     mouseX, mouseY);
         }
     }
@@ -78,7 +90,7 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
         context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight);
 
-        if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) == ItemStack.EMPTY) {
+        if (!this.handler.hasRecipes() || handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
             context.drawTexture(TEXTURE, this.x + 71, this.y + 33, 176, 0, 28, 21);
         }
 
@@ -109,18 +121,18 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
 
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
-        context.drawText(this.textRenderer, this.title, 8, 6, 4210752, false);
+        context.drawText(this.textRenderer, this.title, 8, 6, 0xFF404040, false);
 
-        if (handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT) != ItemStack.EMPTY) {
+        if (!handler.blockEntity.getStack(UncraftingTableBlockEntity.SLOT_INPUT).isEmpty()) {
             int xpCost = this.handler.blockEntity.experienceCost;
             if (xpCost > 0) {
                 boolean hasEnoughXp = false;
                 if (this.client != null && this.client.player != null) {
                     hasEnoughXp = this.client.player.isCreative() || this.client.player.experienceLevel >= xpCost;
                 }
-                int color = hasEnoughXp ? 8453920 : 16736352;
+                int color = hasEnoughXp ? 0xFF80FF20 : 0xFFFF6060;
 
-                Text xpText = Text.translatable("tooltip.three-in-one-uncrafting-table.need_xp", xpCost);
+                Text xpText = Text.translatable("tooltip.three_in_one_uncrafting_table.need_xp", xpCost);
                 int textWidth = this.textRenderer.getWidth(xpText);
 
                 context.drawText(this.textRenderer, xpText, this.backgroundWidth - textWidth - 80, 64, color, false);
@@ -158,5 +170,37 @@ public class UncraftingScreen extends HandledScreen<UncraftingScreenHandler> {
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void renderTestVersionWarning(DrawContext context, long elapsedMs) {
+        float alpha = 1.0F;
+        if (elapsedMs > WARNING_DURATION_MS - 1000) {
+            alpha = (WARNING_DURATION_MS - elapsedMs) / 1000.0F;
+            alpha = MathHelper.clamp(alpha, 0.0F, 1.0F);
+        }
+
+        int bgColor = ((int) (alpha * 200) << 24) | 0x00CC4400;
+        int bannerX = this.x;
+        int bannerY = this.y - 24;
+        int bannerW = this.backgroundWidth;
+        int bannerH = 22;
+
+        context.fill(bannerX, bannerY, bannerX + bannerW, bannerY + bannerH, bgColor);
+
+        int textAlpha = (int) (alpha * 255);
+
+        if (textAlpha >= 4) {
+            Text line1 = Text.translatable(
+                    "gui." + ThreeInOneUncraftingTable.MOD_ID + ".test_version_warning",
+                    ThreeInOneUncraftingTable.versionType);
+            Text line2 = Text.translatable(
+                    "gui." + ThreeInOneUncraftingTable.MOD_ID + ".report_issues");
+
+            int centerX = this.x + this.backgroundWidth / 2;
+            int textColor = (textAlpha << 24) | 0x00FFFFFF;
+
+            context.drawCenteredTextWithShadow(this.textRenderer, line1, centerX, bannerY + 3, textColor);
+            context.drawCenteredTextWithShadow(this.textRenderer, line2, centerX, bannerY + 12, textColor);
+        }
     }
 }

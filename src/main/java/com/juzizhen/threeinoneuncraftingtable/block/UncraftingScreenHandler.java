@@ -15,10 +15,10 @@ public class UncraftingScreenHandler extends ScreenHandler {
     final UncraftingTableBlockEntity blockEntity;
     private final Inventory inventory;
 
-    public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
+    public UncraftingScreenHandler(int syncId, PlayerInventory playerInventory, UncraftingTableBlockEntity uncraftingTable) {
         super(ThreeInOneUncraftingTable.UNCRAFTING_SCREEN_HANDLER, syncId);
-        this.inventory = inventory;
-        this.blockEntity = (UncraftingTableBlockEntity) inventory;
+        this.inventory = uncraftingTable;
+        this.blockEntity = uncraftingTable;
 
         this.addSlot(new BookSlot(blockEntity, UncraftingTableBlockEntity.SLOT_BOOK, 20, 35));
         this.addSlot(new InputSlot(blockEntity, UncraftingTableBlockEntity.SLOT_INPUT, 45, 35));
@@ -120,12 +120,15 @@ public class UncraftingScreenHandler extends ScreenHandler {
             return ItemStack.EMPTY;
         }
 
-        slot.onQuickTransfer(originalStack, movedStack);
-
         if (triggerOutputChange) {
-            blockEntity.onOutputChanged(movedStack, player);
+            // 输出槽只按实际取出的数量调用一次 onOutputChanged，不再走 onQuickTransfer，避免重复触发消耗逻辑（防刷）
+            ItemStack takenStack = movedStack.copy();
+            takenStack.setCount(movedStack.getCount() - originalStack.getCount());
+            blockEntity.onOutputChanged(takenStack, player);
             return ItemStack.EMPTY;
         }
+
+        slot.onQuickTransfer(originalStack, movedStack);
 
         return movedStack;
     }

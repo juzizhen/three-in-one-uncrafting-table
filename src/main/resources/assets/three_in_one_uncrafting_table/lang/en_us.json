@@ -1,0 +1,11 @@
+{
+  "block.three_in_one_uncrafting_table.uncrafting_table": "Uncrafting Table",
+  "container.three_in_one_uncrafting_table.uncrafting_table": "Uncrafting Table",
+
+  "tooltip.three_in_one_uncrafting_table.prev_recipe": "Previous Recipe",
+  "tooltip.three_in_one_uncrafting_table.next_recipe": "Next Recipe",
+  "tooltip.three_in_one_uncrafting_table.move_all": "Move All to Inventory",
+  "tooltip.three_in_one_uncrafting_table.need_xp": "Requires %s experience",
+  "gui.three_in_one_uncrafting_table.test_version_warning": "You are using %s version",
+  "gui.three_in_one_uncrafting_table.report_issues": "Please report any issues!"
+}

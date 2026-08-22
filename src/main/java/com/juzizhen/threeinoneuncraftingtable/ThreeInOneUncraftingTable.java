@@ -11,10 +11,10 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
@@ -26,17 +26,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ThreeInOneUncraftingTable implements ModInitializer {
-	public static final String MOD_ID = "three-in-one-uncrafting-table";
+	public static final String MOD_ID = "three_in_one_uncrafting_table";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static ModConfig CONFIG;
+	public static boolean isTestVersion = false;
+	public static String versionType = null;
 
 	@Override
 	public void onInitialize() {
 		CONFIG = ModConfig.load();
 
+		String version = FabricLoader.getInstance().getModContainer(MOD_ID)
+				.map(container -> container.getMetadata().getVersion().getFriendlyString())
+				.orElse("");
+		versionType = detectVersionType(version);
+		isTestVersion = versionType != null;
+		if (isTestVersion) {
+			LOGGER.info("Three In One Uncrafting Table (Fabric) - {} version detected", versionType);
+		}
+
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries -> entries.add(UNCRAFTING_TABLE_ITEM));
 
 		LOGGER.info("Three In One Uncrafting Table Initialized!");
+	}
+
+	private static String detectVersionType(String version) {
+		if (version == null || version.isEmpty()) return null;
+		String lower = version.toLowerCase(java.util.Locale.ROOT);
+		if (lower.contains("beta")) return "beta";
+		if (lower.contains("alpha")) return "alpha";
+		return null;
 	}
 
 	public static final Block UNCRAFTING_TABLE = Registry.register(
@@ -62,8 +81,11 @@ public class ThreeInOneUncraftingTable implements ModInitializer {
 			Registry.register(
 					Registries.SCREEN_HANDLER,
 					Identifier.of(MOD_ID, "uncrafting_table"),
-					new ExtendedScreenHandlerType<>((syncId, inv, buf) ->
-							new UncraftingScreenHandler(syncId, inv,
-									(Inventory) inv.player.getWorld().getBlockEntity(buf.readBlockPos())))
+					new ExtendedScreenHandlerType<>((syncId, inv, buf) -> {
+						if (!(inv.player.getWorld().getBlockEntity(buf.readBlockPos()) instanceof UncraftingTableBlockEntity uncraftingTable)) {
+							throw new IllegalStateException("No UncraftingTableBlockEntity at target position");
+						}
+						return new UncraftingScreenHandler(syncId, inv, uncraftingTable);
+					})
 			);
 }

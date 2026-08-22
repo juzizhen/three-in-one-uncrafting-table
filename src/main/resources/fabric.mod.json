@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "three-in-one-uncrafting-table",
+	"id": "three_in_one_uncrafting_table",
 	"version": "${version}",
 	"name": "Three In One Uncrafting Table",
 	"description": "This is a three-in-one uncrafting table.",
@@ -12,7 +12,7 @@
 		"sources": "https://github.com/juzizhen/three-in-one-uncrafting-table"
 	},
 	"license": "GPL-3.0",
-	"icon": "assets/three-in-one-uncrafting-table/icon.png",
+	"icon": "assets/three_in_one_uncrafting_table/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

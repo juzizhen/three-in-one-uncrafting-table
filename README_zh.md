@@ -2,7 +2,7 @@
 
 > 这是个三合一拆解台。
 
-![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.20.1/src/main/resources/assets/three-in-one-uncrafting-table/icon.png)
+![Header Image](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.20.1/src/main/resources/assets/three_in_one_uncrafting_table/icon.png)
 
 ---
 ## 📖 简介
@@ -34,3 +34,6 @@
 
 ![附魔转移](https://raw.githubusercontent.com/juzizhen/three-in-one-uncrafting-table/1.20.1/image/6.gif)
 ---
+## 链接
+- [Modrinth](https://modrinth.com/mod/three-in-one-uncrafting-table)
+- [Curseforge](https://www.curseforge.com/minecraft/mc-mods/three-in-one-uncrafting-table)

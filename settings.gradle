@@ -9,4 +9,4 @@ pluginManagement {
 	}
 }
 
-rootProject.name = 'three-in-one-uncrafting-table'
+rootProject.name = 'three_in_one_uncrafting_table'

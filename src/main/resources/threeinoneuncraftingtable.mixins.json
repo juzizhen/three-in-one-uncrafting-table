@@ -3,8 +3,7 @@
   "package": "com.juzizhen.threeinoneuncraftingtable.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "SmithingTransformRecipeAccessor",
-    "SmithingTrimRecipeAccessor"
+    "SmithingTransformRecipeAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
