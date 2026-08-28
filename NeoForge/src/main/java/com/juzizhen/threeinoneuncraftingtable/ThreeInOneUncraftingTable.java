@@ -42,7 +42,9 @@ public class ThreeInOneUncraftingTable {
 
     public static final DeferredBlock<UncraftingTableBlock> UNCRAFTING_TABLE =
             BLOCKS.register("uncrafting_table",
-                    () -> new UncraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SMITHING_TABLE)));
+                    () -> new UncraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SMITHING_TABLE)
+                            .strength(3.0F, 3.0F)
+                            .requiresCorrectToolForDrops()));
 
     public static final DeferredItem<BlockItem> UNCRAFTING_TABLE_ITEM =
             ITEMS.registerSimpleBlockItem("uncrafting_table", UNCRAFTING_TABLE);

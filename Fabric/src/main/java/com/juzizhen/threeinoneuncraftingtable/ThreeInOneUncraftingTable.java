@@ -30,7 +30,9 @@ public class ThreeInOneUncraftingTable implements ModInitializer {
     public static final Block UNCRAFTING_TABLE = Registry.register(
             Registries.BLOCK,
             Identifier.of(MOD_ID, "uncrafting_table"),
-            new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE))
+            new UncraftingTableBlock(AbstractBlock.Settings.copy(Blocks.SMITHING_TABLE)
+                    .strength(3.0F, 3.0F)
+                    .requiresTool())
     );
     public static final Item UNCRAFTING_TABLE_ITEM = Registry.register(
             Registries.ITEM,

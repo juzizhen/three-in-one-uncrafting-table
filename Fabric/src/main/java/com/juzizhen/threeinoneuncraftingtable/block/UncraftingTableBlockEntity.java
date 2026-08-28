@@ -176,6 +176,10 @@ public class UncraftingTableBlockEntity extends BlockEntity implements ExtendedS
 
             if (noOtherOutputs && !getStack(SLOT_INPUT).isEmpty()) {
                 clearOutputSlots();
+                // 补货分支下原料未被消耗，输出槽即将重填为新一批预览：必须归零，
+                // 否则后续破坏掉落/关闭归还会按「已取产物」语义同时返还原料与预览，构成刷物品；
+                // 正常全量取完路径中该值本就已归零，补写无副作用（与 NeoForge 端保持一致）
+                outputGetCount = 0;
                 searchRecipeToOutput(currentInput);
             }
         }
